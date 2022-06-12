@@ -245,7 +245,7 @@ void tumor_cell_phenotype_with_signaling( Cell* pCell, Phenotype& phenotype, dou
 void set_input_nodes(Cell* pCell) 
 {	
 
-	pCell->phenotype.intracellular->set_boolean_variable_value("optoSRC", sense_light(pCell));
+	//pCell->phenotype.intracellular->set_boolean_variable_value("optoSRC", sense_light(pCell));
 	
 	pCell->phenotype.intracellular->set_boolean_variable_value("Oxy", !necrotic_oxygen(pCell));
 	
@@ -280,10 +280,10 @@ void set_input_nodes(Cell* pCell)
 
 	if ( pCell->phenotype.intracellular->has_variable( "DNAdamage" ) ){
 
-		double pressure = pCell->state.simple_pressure;
-		double pressure_threshold = 8.0;
+		//double pressure = pCell->state.simple_pressure;
+		//double pressure_threshold = 8.0;
 		pCell->phenotype.intracellular->set_boolean_variable_value("DNAdamage", 
-			( pressure > pressure_threshold ) ? (8 * PhysiCell::UniformRandom() < pressure) : 0
+			( pCell->custom_data["nucleus_deform"] > 0.5 ) ? (2*PhysiCell::UniformRandom() < pCell->custom_data["nucleus_deform"]) : 0
 		);
 	}
 	/// example
@@ -423,7 +423,7 @@ void custom_cell_attach(Cell* pCell){
 
 		//should I also check the distance between the cells?
 
-		if (junction + otherJunction > PhysiCell::parameters.doubles("cell_junctions_attach_threshold"))
+		if (junction * otherJunction > PhysiCell::parameters.doubles("cell_junctions_attach_threshold"))
 			attach_cells( neigh[i] , pCell ); 
 
 	}
@@ -438,7 +438,7 @@ void custom_detach_cells(Cell* pCell){
 
 		double otherJunction = cell_attached->custom_data["padhesion"];
 
-		if (junction + otherJunction < PhysiCell::parameters.doubles("cell_junctions_detach_threshold"))
+		if (junction * otherJunction < PhysiCell::parameters.doubles("cell_junctions_detach_threshold"))
 			detach_cells( cell_attached , pCell );
 
 	};
@@ -526,6 +526,11 @@ std::vector<Cell*> get_possible_neighbors( Cell* pCell )
 		{ neighbors.push_back( *neighbor ); }
 	}
 
+	for(int i=0; i < neighbors.size(); i++){
+		if(neighbors[i] == pCell)
+			neighbors.erase(neighbors.begin() + i);
+	}
+
 	//std::cout << neighbors.size() << "\n";
 	
 	return neighbors;
@@ -590,7 +595,7 @@ void set_mmp(Cell* pCell, int activate )
 	int ecm_index = pCell->get_microenvironment()->find_density_index("ecm");
 
 	if (activate){
-		pCell->phenotype.secretion.uptake_rates[ecm_index] = PhysiCell::parameters.doubles("ecm_degradation") * pCell->custom_data["integrin"];
+		pCell->phenotype.secretion.uptake_rates[ecm_index] = 0.05 + (PhysiCell::parameters.doubles("ecm_degradation") * pCell->custom_data["integrin"]); // this is  alittle bias so that when mmps is activated the degradation is not totally zero !
 	}
 		
 	else
@@ -975,19 +980,41 @@ void start_SRC_mutation(bool light_on){
 // Here we design a spherical shell 
  std::vector<double> center(3, 0);
  double light_radius = parameters.doubles("config_radius_light");
- //double outer_radius = 150;
- for (auto voxel : microenvironment.mesh.voxels) {
-	 //std::cout << voxel.center;
-	 // Compute norm to center
- 	double t_norm = norm(voxel.center);
- 	// If norm is in [inner_radius, outer_radius], then we add it
- 	if(t_norm < light_radius && light_on){
- 		microenvironment.density_vector(voxel.mesh_index)[microenvironment.find_density_index("light")] = 1;
- 	}
- 	else{
-	 	microenvironment.density_vector(voxel.mesh_index)[microenvironment.find_density_index("light")] = 0;
- 		}
- 	}
+
+ int total_cell_count = all_cells->size(); 
+
+ std::map<std::string, double> mutations;
+
+ for (int n = 0; n < total_cell_count; n++){
+
+	 Cell* pC = (*all_cells)[n]; // global_cell_list[i]; 
+
+	 double norm_pos = norm(pC->position);
+	 if(norm_pos < light_radius && light_on){
+		 mutations["SRC"] = double(light_on);
+		 pC->phenotype.intracellular->mutate(mutations);
+		 std::cout << "MUTATIONS ON!!!! " << pC->phenotype.intracellular->get_boolean_variable_value("SRC") << std::endl;
+	 }
+	 else if(norm_pos < light_radius && !light_on) {
+		mutations["SRC"] = double(light_on);
+		pC->phenotype.intracellular->mutate(mutations);
+		std::cout << "MUTATIONS OFF!!!! " << pC->phenotype.intracellular->get_boolean_variable_value("SRC") << std::endl;
+	 }
+
+ }
+
+//  for (auto voxel : microenvironment.mesh.voxels) {
+// 	 //std::cout << voxel.center;
+// 	 // Compute norm to center
+//  	double t_norm = norm(voxel.center);
+//  	// If norm is in [inner_radius, outer_radius], then we add it
+//  	if(t_norm < light_radius && light_on){
+//  		microenvironment.density_vector(voxel.mesh_index)[microenvironment.find_density_index("light")] = 1;
+//  	}
+//  	else{
+// 	 	microenvironment.density_vector(voxel.mesh_index)[microenvironment.find_density_index("light")] = 0;
+//  		}
+//  	}
 }
 
 	// FUNCTIONS TO PLOT CELLS
@@ -1075,6 +1102,81 @@ std::vector<std::string> my_coloring_function( Cell* pCell )
 	 	return phase_coloring_function(pCell);
 	 else 
 	 	return node_coloring_function( pCell );
+}
+
+void save_cells_net(std::string filename, std::vector<PhysiCell::Cell*>& cells)
+{
+					
+	std::ofstream net_file( filename );
+	
+	net_file << "ID, neighID, neighID45, neighID90, neighID180" << std::endl;
+
+
+
+	for( auto cell : cells ){
+
+		std::vector<Cell*> neighbors = PhysiCell::find_nearby_interacting_cells(cell);
+
+		double rapp = cell->phenotype.motility.motility_vector[1] / cell->phenotype.motility.motility_vector[0];
+
+		double theta = atan(rapp);
+		theta = (theta * 180.0) / M_PI;
+		if(theta < 0)
+			theta = theta + 360.0;
+		net_file << cell->ID << ",";
+
+		for( int n=0; n < neighbors.size() ; n++ ){
+			net_file << neighbors[n]->ID << "/";	
+		}
+
+		net_file << ",";
+
+		double diff = 45.0; // 45 is the angle we want to explore
+
+		for( int n=0; n < neighbors.size() ; n++ ){
+			double theta_neigh = atan(neighbors[n]->phenotype.motility.motility_vector[1] / neighbors[n]->phenotype.motility.motility_vector[0]);
+			theta_neigh = (theta_neigh * 180.0) / M_PI;
+			if(theta_neigh < 0)
+				theta_neigh = theta_neigh + 360.0;
+			if(abs(theta - theta_neigh) < diff)
+				net_file << neighbors[n]->ID << "/";
+			
+		}
+		 
+		net_file << ",";
+
+		diff = 90.0; // 150 is the angle we want to explore
+
+		for( int n=0; n < neighbors.size() ; n++ ){
+			double theta_neigh = atan(neighbors[n]->phenotype.motility.motility_vector[1] / neighbors[n]->phenotype.motility.motility_vector[0]);
+			theta_neigh = (theta_neigh * 180.0) / M_PI;
+			if(theta_neigh < 0)
+				theta_neigh = theta_neigh + 360.0;
+			if(abs(theta - theta_neigh) < diff)
+				net_file << neighbors[n]->ID << "/";
+			
+		}
+
+		net_file << ",";
+
+		diff = 180.0; // 180 is the angle we want to explore
+
+		for( int n=0; n < neighbors.size() ; n++ ){
+			double theta_neigh = atan(neighbors[n]->phenotype.motility.motility_vector[1] / neighbors[n]->phenotype.motility.motility_vector[0]);
+			theta_neigh = (theta_neigh * 180.0) / M_PI;
+			if(theta_neigh < 0)
+				theta_neigh = theta_neigh + 360.0;
+			if(abs(theta - theta_neigh) < diff)
+				net_file << neighbors[n]->ID << "/";
+			
+		}
+
+		net_file << std::endl;
+
+	}
+		
+	net_file.close();
+
 }
 
 void SVG_plot_ecm( std::string filename , Microenvironment& M, double z_slice , double time, std::vector<std::string> (*cell_coloring_function)(Cell*), std::string sub )
