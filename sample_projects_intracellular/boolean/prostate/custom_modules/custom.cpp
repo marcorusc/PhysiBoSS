@@ -24,6 +24,9 @@ void create_cell_types( void )
 	
 	SeedRandom( parameters.ints("random_seed") ); // or specify a seed here 
 	
+	initialize_default_cell_definition();
+
+
 	/* 
 	   Put any modifications to default cell definition here if you 
 	   want to have "inherited" by other cell types. 
@@ -33,14 +36,11 @@ void create_cell_types( void )
 
 	cell_defaults.functions.volume_update_function = standard_volume_update_function;
 	cell_defaults.functions.update_velocity = standard_update_cell_velocity;
-	
 	cell_defaults.functions.update_migration_bias = NULL; 
 	cell_defaults.functions.update_phenotype = tumor_cell_phenotype_with_signaling;
 	cell_defaults.functions.custom_cell_rule = NULL; 
-	
 	cell_defaults.functions.add_cell_basement_membrane_interactions = NULL; 
 	cell_defaults.functions.calculate_distance_to_membrane = NULL; 
-	
 	cell_defaults.functions.set_orientation = NULL;
 
 	/*
@@ -136,14 +136,16 @@ void setup_microenvironment( void )
 
 void setup_tissue( void )
 {
-	Cell* pC;
 
-	std::vector<init_record> cells = read_init_file(parameters.strings("init_cells_filename"), ';', true);
-	std::string bnd_file = PhysiCell::parameters.strings("bnd_file");
-	std::string cfg_file = PhysiCell::parameters.strings("cfg_file");
-	BooleanNetwork prostate_network;
-	double maboss_time_step = PhysiCell::parameters.doubles("maboss_time_step");
-	prostate_network.initialize_boolean_network(bnd_file, cfg_file, maboss_time_step);
+	Cell* pC = NULL; // XXX
+
+	// std::vector<init_record> cells = read_init_file(parameters.strings("init_cells_filename"), ';', true);
+	// std::string bnd_file = PhysiCell::parameters.strings("bnd_file");
+	// std::string cfg_file = PhysiCell::parameters.strings("cfg_file");
+	MaBoSSIntracellular* prostate_network = static_cast<MaBoSSIntracellular*> (pC->phenotype.intracellular); // XXX
+	// BooleanNetwork prostate_network;
+	// double maboss_time_step = PhysiCell::parameters.doubles("maboss_time_step");
+	// prostate_network.initialize_boolean_network(bnd_file, cfg_file, maboss_time_step); // XXX
 
 	for (int i = 0; i < cells.size(); i++)
 	{
@@ -214,17 +216,29 @@ void setup_tissue( void )
 		// pC->phenotype.cycle.data.current_phase_index = phase;
 		pC->phenotype.cycle.data.elapsed_time_in_phase = elapsed_time;	
 		
-		pC->boolean_network = prostate_network;
-		pC->boolean_network.restart_nodes();
+		pC->phenotype.intracellular = prostate_network;
+		// pC->phenotype.intracellular.restart_nodes(); // XXX què fa açò?
 		static int index_next_physiboss_run = pC->custom_data.find_variable_index("next_physiboss_run");
-		pC->custom_data.variables.at(index_next_physiboss_run).value = pC->boolean_network.get_time_to_update();
+		pC->custom_data.variables.at(index_next_physiboss_run).value = pC->phenotype.intracellular.get_time_to_update();
 		update_custom_variables(pC);
 	}
-
 	return; 
 }
 
+// old
 // custom cell phenotype function to run PhysiBoSS when is needed
+// void tumor_cell_phenotype_with_signaling( Cell* pCell, Phenotype& phenotype, double dt)
+// {
+// 	update_cell_and_death_parameters_O2_based(pCell, phenotype, dt);
+
+// 	// update motility state variable
+// 	static int index_motility_state = pCell->custom_data.find_variable_index("motility_state");
+// 	pCell->custom_data.variables.at(index_motility_state).value = int(pCell->phenotype.motility.is_motile);
+	
+// 	boolean_model_interface_main (pCell, phenotype, dt);
+// }
+
+// XXX new
 void tumor_cell_phenotype_with_signaling( Cell* pCell, Phenotype& phenotype, double dt)
 {
 	update_cell_and_death_parameters_O2_based(pCell, phenotype, dt);
@@ -233,7 +247,14 @@ void tumor_cell_phenotype_with_signaling( Cell* pCell, Phenotype& phenotype, dou
 	static int index_motility_state = pCell->custom_data.find_variable_index("motility_state");
 	pCell->custom_data.variables.at(index_motility_state).value = int(pCell->phenotype.motility.is_motile);
 	
-	boolean_model_interface_main (pCell, phenotype, dt);
+	// boolean_model_interface_main (pCell, phenotype, dt);
+	set_input_nodes(pCell);
+
+	pCell->phenotype.intracellular->update();
+	
+	from_nodes_to_cell(pCell, phenotype, dt);
+	// color_node(pCell);
+
 }
 
 std::vector<std::string> prolif_apoptosis_coloring( Cell* pCell )

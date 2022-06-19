@@ -13,7 +13,7 @@ void update_custom_variables( Cell* pCell )
 			int index_drug_node = pCell->custom_data.find_variable_index(drug_name + "_node");
 			string drug_target = get_value(drug_targets, drug_name);
 			pCell->custom_data.variables.at(index_drug_conc).value = pCell->nearest_density_vector()[drug_index];
-			pCell->custom_data.variables.at(index_drug_node).value = pCell->boolean_network.get_node_value("anti_" + drug_target);
+			pCell->custom_data.variables.at(index_drug_node).value = pCell->phenotype.intracellular.get_node_value("anti_" + drug_target);
 		}	
 	}
 }
@@ -32,11 +32,11 @@ void set_boolean_node (Cell* pCell, std::string drug_name, int drug_index, doubl
 			if (random_num <= cell_inhibition) 
 			{
 			
-				pCell->boolean_network.set_node_value(node_name, 1);
+				pCell->phenotype.intracellular.set_boolean_variable_value(node_name, 1);
 			}
 			else 
 			{
-				pCell->boolean_network.set_node_value(node_name, 0);
+				pCell->phenotype.intracellular.set_boolean_variable_value(node_name, 0);
 			}
 			
 		}
@@ -93,7 +93,7 @@ void set_input_nodes(Cell* pCell) {
 
 void from_nodes_to_cell(Cell* pCell, Phenotype& phenotype, double dt)
 {
-	std::vector<bool>* nodes = pCell->boolean_network.get_nodes();
+	std::vector<bool>* nodes = pCell->boolean_network.get_nodes(); // XXX print_current_nodes?
 	int bn_index;
 
 	// Prostate live model

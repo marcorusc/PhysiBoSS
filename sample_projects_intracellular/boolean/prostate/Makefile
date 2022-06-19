@@ -29,12 +29,13 @@ ifneq ($(OS), Windows_NT)
 	LDL_FLAG = -ldl
 endif
 
-LIB := -L$(CUR_DIR)/$(MABOSS_DIR)/lib -lMaBoSS $(LDL_FLAG)
+LIB := -L$(CUR_DIR)/$(MABOSS_DIR)/lib -lMaBoSS-static $(LDL_FLAG)
 INC := -DADDON_PHYSIBOSS -I$(CUR_DIR)/$(MABOSS_DIR)/include -DMAXNODES=$(MABOSS_MAX_NODES)
+
 
 # If max nodes > 64, change lib path 
 ifeq ($(shell expr $(MABOSS_MAX_NODES) '>' 64), 1)
-LIB := -L$(CUR_DIR)/$(MABOSS_DIR)/lib -lMaBoSS_$(MABOSS_MAX_NODES)n $(LDL_FLAG)
+LIB := -L$(CUR_DIR)/$(MABOSS_DIR)/lib -lMaBoSS_$(MABOSS_MAX_NODES)n-static $(LDL_FLAG)
 endif
 
 ARCH := native # best auto-tuning
@@ -73,7 +74,7 @@ PhysiCell_pugixml.o PhysiCell_settings.o
 
 # put your custom objects here (they should be in the custom_modules directory)
 
-PhysiBoSS_OBJECTS := utils.o maboss_network.o boolean_network.o
+PhysiBoSS_OBJECTS := maboss_network.o maboss_intracellular.o
 
 PhysiCell_custom_module_OBJECTS := custom.o drug_sensitivity.o boolean_model_interface.o
 
@@ -86,6 +87,8 @@ ALL_OBJECTS := $(PhysiCell_OBJECTS) $(PhysiCell_custom_module_OBJECTS) $(PhysiBo
 
 all: MaBoSS main.cpp $(ALL_OBJECTS)
 	$(COMPILE_COMMAND) $(INC) -o $(PROGRAM_NAME) $(ALL_OBJECTS) main.cpp $(LIB)
+	@echo ""
+	@echo "check for $(PROGRAM_NAME)"
 
 # PhysiCell core components	
 
@@ -99,13 +102,13 @@ PhysiCell_cell.o: ./core/PhysiCell_cell.cpp
 	$(COMPILE_COMMAND) $(INC) -c ./core/PhysiCell_cell.cpp 
 
 PhysiCell_cell_container.o: ./core/PhysiCell_cell_container.cpp
-	$(COMPILE_COMMAND) $(INC) -c ./core/PhysiCell_cell_container.cpp 
+	$(COMPILE_COMMAND) -c ./core/PhysiCell_cell_container.cpp 
 	
 PhysiCell_standard_models.o: ./core/PhysiCell_standard_models.cpp
-	$(COMPILE_COMMAND) $(INC) -c ./core/PhysiCell_standard_models.cpp 
+	$(COMPILE_COMMAND) -c ./core/PhysiCell_standard_models.cpp 
 	
 PhysiCell_utilities.o: ./core/PhysiCell_utilities.cpp
-	$(COMPILE_COMMAND) $(INC) -c ./core/PhysiCell_utilities.cpp 
+	$(COMPILE_COMMAND) -c ./core/PhysiCell_utilities.cpp 
 	
 PhysiCell_custom.o: ./core/PhysiCell_custom.cpp
 	$(COMPILE_COMMAND) -c ./core/PhysiCell_custom.cpp 
@@ -151,13 +154,13 @@ PhysiCell_SVG.o: ./modules/PhysiCell_SVG.cpp
 	$(COMPILE_COMMAND) -c ./modules/PhysiCell_SVG.cpp
 
 PhysiCell_pathology.o: ./modules/PhysiCell_pathology.cpp
-	$(COMPILE_COMMAND) $(INC) -c ./modules/PhysiCell_pathology.cpp
+	$(COMPILE_COMMAND) -c ./modules/PhysiCell_pathology.cpp
 
 PhysiCell_MultiCellDS.o: ./modules/PhysiCell_MultiCellDS.cpp
-	$(COMPILE_COMMAND) $(INC) -c ./modules/PhysiCell_MultiCellDS.cpp
+	$(COMPILE_COMMAND) -c ./modules/PhysiCell_MultiCellDS.cpp
 
 PhysiCell_various_outputs.o: ./modules/PhysiCell_various_outputs.cpp
-	$(COMPILE_COMMAND) $(INC) -c ./modules/PhysiCell_various_outputs.cpp
+	$(COMPILE_COMMAND) -c ./modules/PhysiCell_various_outputs.cpp
 
 	
 PhysiCell_pugixml.o: ./modules/PhysiCell_pugixml.cpp
@@ -169,16 +172,17 @@ PhysiCell_settings.o: ./modules/PhysiCell_settings.cpp
 # user-defined PhysiCell modules
 
 MaBoSS:
-	cd $(MABOSS_DIR)/src && make MAXNODES=$(MABOSS_MAX_NODES) install_alib
+ifeq ($(OS), Windows_NT)
+	python beta/setup_libmaboss.py
+else
+	python3 beta/setup_libmaboss.py
+endif
 
 maboss_network.o: ./addons/PhysiBoSS/src/maboss_network.cpp
 	$(COMPILE_COMMAND) $(INC) -c ./addons/PhysiBoSS/src/maboss_network.cpp
 
-utils.o: ./addons/PhysiBoSS/src/utils.cpp
-	$(COMPILE_COMMAND) -c ./addons/PhysiBoSS/src/utils.cpp
-
-boolean_network.o: ./addons/PhysiBoSS/src/boolean_network.cpp
-	$(COMPILE_COMMAND) $(INC) -c ./addons/PhysiBoSS/src/boolean_network.cpp
+maboss_intracellular.o: ./addons/PhysiBoSS/src/maboss_intracellular.cpp
+	$(COMPILE_COMMAND) $(INC) -c ./addons/PhysiBoSS/src/maboss_intracellular.cpp
 
 custom.o: ./custom_modules/custom.cpp 
 	$(COMPILE_COMMAND) $(INC) -c ./custom_modules/custom.cpp
@@ -204,9 +208,10 @@ reset:
 	rm -rf ./scripts
 
 MaBoSS-clean:
-	cd $(MABOSS_DIR)/src && make clean
+	# rm -fr addons/PhysiBoSS/MaBoSS-env-2.0
 	
-clean: MaBoSS-clean
+clean: 
+ # MaBoSS-clean
 	rm -f *.o
 	rm -f $(PROGRAM_NAME)*
 	
@@ -214,8 +219,7 @@ data-cleanup:
 	rm -f *.mat
 	rm -f *.xml
 	rm -f *.svg
-	rm -rf ./output
-	mkdir ./output
+	rm -f ./output/*
 	touch ./output/empty.txt
 	
 # archival 
