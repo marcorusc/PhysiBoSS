@@ -15,6 +15,7 @@ from itertools import combinations, product
 from lxml import etree
 import subprocess
 import pandas as pd
+from tempfile import mkstemp
 
 current_wd = os.getcwd()
 arg = sys.argv
@@ -100,7 +101,7 @@ drug_concs = args.drug_concs
 replicates = args.replicates
 
 # check if the project is in sample projects 
-if not os.path.isdir("sample_projects/" + project):
+if not os.path.isdir("sample_projects_intracellular/boolean/" + project):
     print(project + " folder is not found")
     sys.exit(1)
 
@@ -116,7 +117,7 @@ else :
 
 # specify boolean model path
 #input_cond = args.input_cond
-bool_model_path_dir = "{}/{}/{}/{}".format("sample_projects", project, "config", "boolean_network")
+bool_model_path_dir = "{}/{}/{}/{}".format("sample_projects_intracellular/boolean", project, "config", "boolean_network")
 if (project == "prostate") :
     bool_model_filename = cell_line + "_mut_RNA_00"
 else:
@@ -127,7 +128,7 @@ bool_model = "{}/{}".format(bool_model_path_dir, bool_model_filename)
 node_list_1 = [x.split(", ") for x in node_list]
 
 # set drug sensitivity path
-drug_csv_path =  "{}/{}/{}/{}_{}".format("sample_projects", project, "config", project,"drug_sensitivity.csv")
+drug_csv_path =  "{}/{}/{}/{}_{}".format("sample_projects_intracellular/boolean", project, "config", project,"drug_sensitivity.csv")
 drug_dataframe = pd.read_csv(drug_csv_path)
 
 # create two list containing the value and the name of the chosen drug resistance levels 
@@ -137,7 +138,7 @@ drug_rest_name_list = [str(i).replace(".", "_") for i in drug_rest_value_list]
 print("Applied drug resistance proportions: "+str(drug_rest_value_list).replace("[","").replace("]",""))
 print("Applied drug concentrations: " + str(drug_concs).replace("[","").replace("]",""))
 # set base paths for output and project folders 
-sample_project_path = "sample_projects"
+sample_project_path = "sample_projects_intracellular/boolean"
 prostate_path = "{}/{}".format(sample_project_path, project)
 project_name = "{}_{}_{}".format("physiboss_drugsim", project, cell_line)
 project_path = "{}/{}".format(sample_project_path, project_name) 
@@ -424,10 +425,11 @@ def add_drug_to_xml(drug, drug_concs, rest, path_to_xml, xml_output_path, model_
     drug_concentration.text = str(drug_concs)
    
     # set the new bnd and cfg files 
-    bnd_file = user_parameters.find('bnd_file') 
+    intracellular = phenotype.find('intracellular') 
+    bnd_file = intracellular.find('bnd_filename')
     # this path is for later when i have in the makefile saved where the files are 
     bnd_file.text = "{}/{}/{}/{}_{}.{}".format(".", "config", "boolean_network", model_name, "all_nodes", "bnd")
-    cfg_file = user_parameters.find('cfg_file') 
+    cfg_file = intracellular.find('bnd_filename')
     cfg_file.text = "{}/{}/{}/{}_{}.{}".format(".", "config", "boolean_network", model_name, "all_nodes", "cfg")
 
     # set the chosen simulation mode 
@@ -462,7 +464,48 @@ def add_project_to_makefile(project_name, makefile_path):
                 line = make_string  + line 
             output_makefile.write(line)
 
+def sed(pattern, replace, source, dest=None, count=0):
+    """Reads a source file and writes the destination file.
 
+    In each line, replaces pattern with replace.
+
+    Args:
+        pattern (str): pattern to match (can be re.pattern)
+        replace (str): replacement str
+        source  (str): input filename
+        count (int): number of occurrences to replace
+        dest (str):   destination filename, if not given, source will be over written.        
+    """
+
+    fin = open(source, 'r')
+    num_replaced = count
+
+    if dest:
+        fout = open(dest, 'w')
+    else:
+        fd, name = mkstemp()
+        fout = open(name, 'w')
+
+    for line in fin:
+        out = re.sub(pattern, replace, line)
+        fout.write(out)
+
+        if out != line:
+            num_replaced += 1
+        if count and num_replaced > count:
+            break
+    try:
+        fout.writelines(fin.readlines())
+    except Exception as E:
+        raise E
+
+    fin.close()
+    fout.close()
+
+    if not dest:
+        shutil.move(name, source) 
+        
+        
 def setup_drug_simulations(druglist, nodelist, bool_model_name, bool_model, project_path, rest_list, drug_concs, mode, simulation_list):
 
 
@@ -574,7 +617,8 @@ with open(project_makefile, "w") as output_makefile:
 
 # add the new sample project to the Makefile in the main Physiboss folder
 makefile_path = "Makefile"
-add_project_to_makefile(project_name, makefile_path)
+# add_project_to_makefile(project_name, makefile_path)
+sed(project, project_name, makefile_path)
 
 # rename the main file 
 original_main_path = "{}/{}-{}.{}".format(project_path, "main", project, "cpp")
@@ -593,7 +637,8 @@ if (cluster == False):
 else:
     fw1 = open("./run_drug_simulations.sh", "w")
     for xml_file in simulation_list:
-        fw1.write("{}/{}".format(".", project_name) + " " + xml_file + "\n")
+        # fw1.write("{}/{}".format(".", project_name) + " " + xml_file + "\n")
+        fw1.write("{}/{}".format(".", project_name) + " " + xml_file + xml_file.replace("config/settings_", " > out_").replace("xml","txt") + "\n")
     fw1.close()
     fw1 = open("./run_greasy.sh", "w")
     fw1.write("#!/bin/bash\n" )
