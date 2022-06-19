@@ -11,9 +11,9 @@ ifdef PHYSICELL_CPP
 	CC := $(PHYSICELL_CPP)
 endif
 
-# prostate model has more than 64 nodes, so we have 
-# to set up this var to the number of nodes
-MABOSS_MAX_NODES = 150
+# prostate model has more than 64 nodes (137 the regular BN), so we have 
+# to set up this var to the number of nodes [128, 256, 512, 1024 precompiled]
+MABOSS_MAX_NODES = 256
 
 ### MaBoSS configuration 
 # MaBoSS max nodes

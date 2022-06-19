@@ -10,10 +10,9 @@
  * 
  *	\details Modules needed for the prostate example. This custom module can be used to study the inhibition of prostate cell lines.
  *
- *
- *	\date 03/03/2021
- *	\author Annika Meert, BSC-CNS, with code previously developed by Arnau Montagud, Gerard Pradas and Miguel Ponce de Leon, BSC-CNS
- */
+ *	\date 19/06/2022
+ *	\author Annika Meert and Arnau Montagud, BSC-CNS, with code previously developed by Gerard Pradas and Miguel Ponce de Leon, BSC-CNS
+*/
 
 using namespace BioFVM; 
 using namespace PhysiCell;

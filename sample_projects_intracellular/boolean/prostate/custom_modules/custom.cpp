@@ -9,8 +9,8 @@
  *	\details Modules needed for the prostate example. 
  *
  *
- *	\date 14/12/2020
- *	\author Annika Meert, BSC-CNS, with code previously developed by Arnau Montagud, Gerard Pradas and Miguel Ponce de Leon, BSC-CNS
+ *	\date 19/06/2022
+ *	\author Arnau Montagud and Annika Meert, BSC-CNS, with code previously developed by Gerard Pradas and Miguel Ponce de Leon, BSC-CNS
  */
 
 // declare cell definitions here 
@@ -98,13 +98,14 @@ void setup_microenvironment( void )
 			string drug_conc = parameters.strings("drug_concentration_" + drug_name);
 			double drug_concentration;
 			// check if drug_conc contains the string "IC"
-			if(drug_conc.find("IC") != string::npos) {
+			if(drug_conc.find("IC") != string::npos) 
+			{
 				drug_concentration = get_drug_concentration_from_IC(cell_line, drug_name, drug_conc, simulation_mode);
-			
 			}
-			else {
+			else 
+			{
 				drug_concentration = stod(drug_conc);
-				}
+			}
 			
 			// double drug_concentration = get_drug_concentration_from_level(cell_line, drug_name, current_drug_level, total_drug_levels, simulation_mode);
 			condition_vector.push_back(drug_concentration);
@@ -139,10 +140,10 @@ void setup_tissue( void )
 
 	Cell* pC = NULL; // XXX
 
-	// std::vector<init_record> cells = read_init_file(parameters.strings("init_cells_filename"), ';', true);
+	std::vector<init_record> cells = read_init_file(parameters.strings("init_cells_filename"), ';', true);
 	// std::string bnd_file = PhysiCell::parameters.strings("bnd_file");
 	// std::string cfg_file = PhysiCell::parameters.strings("cfg_file");
-	MaBoSSIntracellular* prostate_network = static_cast<MaBoSSIntracellular*> (pC->phenotype.intracellular); // XXX
+	// MaBoSSIntracellular* prostate_network = static_cast<MaBoSSIntracellular*> (pC->phenotype.intracellular); // XXX
 	// BooleanNetwork prostate_network;
 	// double maboss_time_step = PhysiCell::parameters.doubles("maboss_time_step");
 	// prostate_network.initialize_boolean_network(bnd_file, cfg_file, maboss_time_step); // XXX
@@ -216,10 +217,10 @@ void setup_tissue( void )
 		// pC->phenotype.cycle.data.current_phase_index = phase;
 		pC->phenotype.cycle.data.elapsed_time_in_phase = elapsed_time;	
 		
-		pC->phenotype.intracellular = prostate_network;
+		// pC->phenotype.intracellular = prostate_network; // XXX 
 		// pC->phenotype.intracellular.restart_nodes(); // XXX què fa açò?
-		static int index_next_physiboss_run = pC->custom_data.find_variable_index("next_physiboss_run");
-		pC->custom_data.variables.at(index_next_physiboss_run).value = pC->phenotype.intracellular.get_time_to_update();
+		// static int index_next_physiboss_run = pC->custom_data.find_variable_index("next_physiboss_run");
+		// pC->custom_data.variables.at(index_next_physiboss_run).value = pC->phenotype.intracellular.get_time_to_update();
 		update_custom_variables(pC);
 	}
 	return; 
@@ -247,14 +248,17 @@ void tumor_cell_phenotype_with_signaling( Cell* pCell, Phenotype& phenotype, dou
 	static int index_motility_state = pCell->custom_data.find_variable_index("motility_state");
 	pCell->custom_data.variables.at(index_motility_state).value = int(pCell->phenotype.motility.is_motile);
 	
-	// boolean_model_interface_main (pCell, phenotype, dt);
-	set_input_nodes(pCell);
-
-	pCell->phenotype.intracellular->update();
+	// prostate
+	boolean_model_interface_main (pCell, phenotype, dt);
 	
-	from_nodes_to_cell(pCell, phenotype, dt);
+	// tnf
+	// tnf_bm_interface_main(pCell, phenotype, dt);
+	
+	// cell_lines
+	// set_input_nodes(pCell);
+	// pCell->phenotype.intracellular->update();
+	// from_nodes_to_cell(pCell, phenotype, dt);
 	// color_node(pCell);
-
 }
 
 std::vector<std::string> prolif_apoptosis_coloring( Cell* pCell )

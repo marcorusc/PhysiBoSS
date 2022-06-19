@@ -6,21 +6,21 @@
 #include <cmath>
 #include <omp.h>
 #include <fstream>
+
 #include "./core/PhysiCell.h"
 #include "./modules/PhysiCell_standard_modules.h" 
+#include "./addons/PhysiBoSS/src/maboss_intracellular.h"	
+// put custom code modules here! 
+#include "./custom_modules/custom.h" 
+#include "./custom_modules/drug_sensitivity.h"
 
 /**
  *	\main main-prostate file
  *	\brief Main file of the prostate example
 
- *	\date 14/12/2020
- *	\author Annika Meert, BSC-CNS, with code previously developed by Arnau Montagud, Gerard Pradas and Miguel Ponce de Leon, BSC-CNS
- */
-
-// put custom code modules here! 
-
-#include "./custom_modules/custom.h" 
-#include "./custom_modules/drug_sensitivity.h"
+ *	\date 19/06/2022
+ *	\author Arnau Montagud and Annika Meert, BSC-CNS, with code previously developed by Gerard Pradas and Miguel Ponce de Leon, BSC-CNS
+*/
 
 using namespace BioFVM;
 using namespace PhysiCell;
@@ -115,8 +115,7 @@ int main( int argc, char* argv[] )
 		report_file<<"simulated time\tnum cells\tnum division\tnum death\twall time"<<std::endl;
 	}
 	
-	// main loop 
-	
+	// main loop 	
 	try 
 	{		
 		while( PhysiCell_globals.current_time < PhysiCell_settings.max_time + 0.1*diffusion_dt )
@@ -135,7 +134,8 @@ int main( int argc, char* argv[] )
 					sprintf( filename , "%s/output%08u" , PhysiCell_settings.folder.c_str(),  PhysiCell_globals.full_output_index ); 
 					
 					save_PhysiCell_to_MultiCellDS_xml_pugi( filename , microenvironment , PhysiCell_globals.current_time ); 
-				}
+					MaBoSSIntracellular::save( filename, *PhysiCell::all_cells );
+					}
 				
 				PhysiCell_globals.full_output_index++; 
 				PhysiCell_globals.next_full_save_time += PhysiCell_settings.full_save_interval;
@@ -193,3 +193,5 @@ int main( int argc, char* argv[] )
 
 	return 0; 
 }
+
+
