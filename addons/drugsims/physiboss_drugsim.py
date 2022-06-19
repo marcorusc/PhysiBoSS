@@ -429,7 +429,7 @@ def add_drug_to_xml(drug, drug_concs, rest, path_to_xml, xml_output_path, model_
     bnd_file = intracellular.find('bnd_filename')
     # this path is for later when i have in the makefile saved where the files are 
     bnd_file.text = "{}/{}/{}/{}_{}.{}".format(".", "config", "boolean_network", model_name, "all_nodes", "bnd")
-    cfg_file = intracellular.find('bnd_filename')
+    cfg_file = intracellular.find('cfg_filename')
     cfg_file.text = "{}/{}/{}/{}_{}.{}".format(".", "config", "boolean_network", model_name, "all_nodes", "cfg")
 
     # set the chosen simulation mode 
