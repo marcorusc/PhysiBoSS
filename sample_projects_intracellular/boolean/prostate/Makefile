@@ -60,6 +60,8 @@ ARCH := native # best auto-tuning
 CFLAGS := -march=$(ARCH) -O3 -fomit-frame-pointer -mfpmath=both -fopenmp -m64 -std=c++11
 # debug:
 # CFLAGS := -march=$(ARCH) -O0 -ggdb -fomit-frame-pointer -mfpmath=both -fopenmp -m64 -std=c++11
+# CFLAGS := -march=$(ARCH) -g3 -ggdb -O3 -fomit-frame-pointer -mfpmath=both -fopenmp -m64 -std=c++11
+
 
 COMPILE_COMMAND := $(CC) $(CFLAGS) 
 
@@ -81,7 +83,8 @@ PhysiCell_custom_module_OBJECTS := custom.o drug_sensitivity.o boolean_model_int
 pugixml_OBJECTS := pugixml.o
 
 PhysiCell_OBJECTS := $(BioFVM_OBJECTS)  $(pugixml_OBJECTS) $(PhysiCell_core_OBJECTS) $(PhysiCell_module_OBJECTS)
-ALL_OBJECTS := $(PhysiCell_OBJECTS) $(PhysiCell_custom_module_OBJECTS) $(PhysiBoSS_OBJECTS)
+ALL_OBJECTS := $(PhysiCell_OBJECTS) $(PhysiCell_custom_module_OBJECTS) $(PhysiBoSS_OBJECTS) 
+#$(PhysiBoSS_module_OBJECTS)
 
 # compile the project 
 
