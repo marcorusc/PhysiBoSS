@@ -41,7 +41,8 @@ BioFVM_OBJECTS := BioFVM_vector.o BioFVM_mesh.o BioFVM_microenvironment.o BioFVM
 BioFVM_utilities.o BioFVM_basic_agent.o BioFVM_MultiCellDS.o BioFVM_agent_container.o 
 
 PhysiCell_core_OBJECTS := PhysiCell_phenotype.o PhysiCell_cell_container.o PhysiCell_standard_models.o \
-PhysiCell_cell.o PhysiCell_custom.o PhysiCell_utilities.o PhysiCell_constants.o PhysiCell_basic_signaling.o
+PhysiCell_cell.o PhysiCell_custom.o PhysiCell_utilities.o PhysiCell_constants.o PhysiCell_basic_signaling.o \
+PhysiCell_signal_behavior.o 
 
 PhysiCell_module_OBJECTS := PhysiCell_SVG.o PhysiCell_pathology.o PhysiCell_MultiCellDS.o PhysiCell_various_outputs.o \
 PhysiCell_pugixml.o PhysiCell_settings.o PhysiCell_geometry.o
@@ -63,12 +64,19 @@ all:
 	make heterogeneity-sample
 	make 
 
+name:
+	@echo ""
+	@echo "Executable name is" $(PROGRAM_NAME)
+	@echo ""
+
 # sample projects 	
 list-projects:
 	@echo "Sample projects: template biorobots-sample cancer-biorobots-sample cancer-immune-sample"
-	@echo "                 celltypes3-sample heterogeneity-sample heterogeneity-3D pred-prey-farmer virus-macrophage-sample worm-sample"
+	@echo "                 celltypes3-sample heterogeneity-sample heterogeneity-3D pred-prey-farmer"
+	@echo "                 virus-macrophage-sample worm-sample interaction-sample"
 	@echo ""
-	@echo "Sample intracellular projects: template_BM ode-energy-sample physiboss-cell-lines-sample physiboss-tnf-model cancer-metabolism-sample"
+	@echo "Sample intracellular projects: template_BM ode-energy-sample physiboss-cell-lines-sample"
+	@echo "                               physiboss-tnf-model cancer-metabolism-sample"
 	@echo ""
 	
 template:
@@ -162,7 +170,16 @@ worm-sample:
 	cp Makefile Makefile-backup
 	cp ./sample_projects/worm/Makefile .
 	cp ./config/PhysiCell_settings.xml ./config/PhysiCell_settings-backup.xml 
-	cp ./sample_projects/worm/config/* ./config/	
+	cp ./sample_projects/worm/config/* ./config/
+	
+interaction-sample:
+	cp ./sample_projects/interactions/custom_modules/* ./custom_modules/
+	touch main.cpp && cp main.cpp main-backup.cpp
+	cp ./sample_projects/interactions/main.cpp ./main.cpp 
+	cp Makefile Makefile-backup
+	cp ./sample_projects/interactions/Makefile .
+	cp ./config/PhysiCell_settings.xml ./config/PhysiCell_settings-backup.xml 
+	cp ./sample_projects/interactions/config/* ./config/
 
 # ---- intracellular projects 
 ode-energy-sample:
@@ -211,6 +228,7 @@ cancer-metabolism-sample:
 	cp ./config/PhysiCell_settings.xml ./config/PhysiCell_settings-backup.xml
 	cp ./sample_projects_intracellular/fba/cancer_metabolism/config/* ./config/
 
+<<<<<<< HEAD
 template_BM: 	
 	cp ./sample_projects_intracellular/boolean/template_BM/custom_modules/* ./custom_modules/
 	touch main.cpp && cp main.cpp main-backup.cpp
@@ -221,6 +239,8 @@ template_BM:
 	cp -r ./sample_projects_intracellular/boolean/template_BM/config/* ./config/
 	mkdir ./scripts/
 	cp ./sample_projects_intracellular/boolean/template_BM/scripts/* ./scripts/
+=======
+>>>>>>> 1.10.4
 
 # early examples for convergence testing 
 
@@ -276,6 +296,9 @@ PhysiCell_custom.o: ./core/PhysiCell_custom.cpp
 PhysiCell_constants.o: ./core/PhysiCell_constants.cpp
 	$(COMPILE_COMMAND) -c ./core/PhysiCell_constants.cpp 
 	
+PhysiCell_signal_behavior.o: ./core/PhysiCell_signal_behavior.cpp
+	$(COMPILE_COMMAND) -c ./core/PhysiCell_signal_behavior.cpp 
+
 # BioFVM core components (needed by PhysiCell)
 	
 BioFVM_vector.o: ./BioFVM/BioFVM_vector.cpp
@@ -390,11 +413,11 @@ FRAMERATE := 24
 OUTPUT := output
 
 jpeg: 
-	@magick identify -format "%h" $(OUTPUT)/initial.svg >> __H.txt 
-	@magick identify -format "%w" $(OUTPUT)/initial.svg >> __W.txt 
-	@expr 2 \* \( $$(grep . __H.txt) / 2 \) >> __H1.txt 
-	@expr 2 \* \( $$(grep . __W.txt) / 2 \) >> __W1.txt 
-	@echo "$$(grep . __W1.txt)!x$$(grep . __H1.txt)!" >> __resize.txt 
+	@magick identify -format "%h" $(OUTPUT)/initial.svg > __H.txt 
+	@magick identify -format "%w" $(OUTPUT)/initial.svg > __W.txt 
+	@expr 2 \* \( $$(grep . __H.txt) / 2 \) > __H1.txt 
+	@expr 2 \* \( $$(grep . __W.txt) / 2 \) > __W1.txt 
+	@echo "$$(grep . __W1.txt)!x$$(grep . __H1.txt)!" > __resize.txt 
 	@magick mogrify -format jpg -resize $$(grep . __resize.txt) $(OUTPUT)/s*.svg
 	rm -f __H*.txt __W*.txt __resize.txt 
 	
@@ -408,8 +431,8 @@ movie:
 
 SOURCE := PhysiCell_upgrade.zip 
 get-upgrade: 
-	@echo $$(curl https://raw.githubusercontent.com/MathCancer/PhysiCell/master/VERSION.txt) >> VER.txt 
-	@echo https://github.com/MathCancer/PhysiCell/releases/download/$$(grep . VER.txt)/PhysiCell_V.$$(grep . VER.txt).zip >> DL_FILE.txt 
+	@echo $$(curl https://raw.githubusercontent.com/MathCancer/PhysiCell/master/VERSION.txt) > VER.txt 
+	@echo https://github.com/MathCancer/PhysiCell/releases/download/$$(grep . VER.txt)/PhysiCell_V.$$(grep . VER.txt).zip > DL_FILE.txt 
 	rm -f VER.txt
 	$$(curl -L $$(grep . DL_FILE.txt) --output PhysiCell_upgrade.zip)
 	rm -f DL_FILE.txt 

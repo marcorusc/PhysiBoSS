@@ -1,8 +1,8 @@
 # PhysiBoSS 2.0: a sustainable integration of stochastic Boolean and agent-based modelling frameworks
 
-**Version:** 2.0
+**Version:** 2.2.0
 
-**Release date:** XXX 2021
+**Release date:** July 2022
 
 ## Overview: 
 PhysiBoSS 2.0 is a redesign and reimplementation of PhysiBoSS ([doi:10.1093/bioinformatics/bty766](https://doi.org/10.1093/bioinformatics/bty766)). It has been conceived as an add-on that expands the PhysiCell ([doi:10.1371/journal.pcbi.1005991](https://dx.doi.org/10.1371/journal.pcbi.1005991)) agent-based functionalities with intracellular cell signalling using MaBoSS having a decoupled, maintainable and model-agnostic design. PhysiBoSS 2.0 reproduces simulations reported in the original PhysiBoSS publications and can be used with other Boolean models, for instance to predict drug synergy in a gastric adenocarcinoma cell line.
@@ -38,10 +38,10 @@ make
 - template2D
 - template3D
 - virus-macrophage-sample
+- worm-sample
+- interaction-sample
 
 **make** : compiles the current project. If no project has been defined, it first populates the cancer heterogeneity 2D sample project and compiles it 
-
-**make list-projects** : list all available sample projects 
 
 **make clean** : removes all .o files and the executable, so that the next "make" recompiles the entire project 
 

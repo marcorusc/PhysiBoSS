@@ -289,6 +289,57 @@ std::vector<double> transmission( std::vector<double>& incoming_light, std::vect
 	return output;
 }
 
+std::vector<std::string> hematoxylin_eosin_DAB_cell_coloring( Cell* pCell )
+{
+	static std::vector<std::string> out( 4, "rgb(255,255,255)" );
+	// cyto_color, cyto_outline , nuclear_color, nuclear_outline
+
+	// cytoplasm colors 
+  
+	double fluid_fraction = pCell->phenotype.volume.cytoplasmic_fluid / (pCell->phenotype.volume.cytoplasmic + 1e-10);
+	double solid_fraction = pCell->phenotype.volume.cytoplasmic_solid / (pCell->phenotype.volume.cytoplasmic + 1e-10);
+	double calc_fraction  = pCell->phenotype.volume.calcified_fraction; 
+ 
+	static double thickness = 20;
+ 
+	static std::vector<double> light( 3, 255.0 ); 
+ 
+	static std::vector<double> eosin_absorb = {2.55,33.15,2.55}; // ( 3 , 3.0 ); // (3,33,3)
+	static std::vector<double> hematoxylin_absorb = {45.90,51.00,20.40}; // ( 3, 45.0 ); // (45,51,20)
+	static std::vector<double> DAB_absorb = {65.93,109.14,129.82}; 
+
+	static std::vector<double> temp( 3, 0.0 );
+ 
+	// eosin staining of cytoplasmic basics 
+	temp = transmission( light, eosin_absorb , thickness , solid_fraction );
+	// hematoxylin staining of cytoplasmic calcifications 
+	temp = transmission( temp , hematoxylin_absorb ,thickness, calc_fraction );
+	// DAB staining of cytoplasm (if any) 
+	temp = transmission( temp , DAB_absorb ,thickness, pCell->custom_data["DAB_cytoplasm"]*solid_fraction );
+ 
+	static char szTempString [128]; 
+	sprintf( szTempString , "rgb(%u,%u,%u)", (int) round( temp[0] ) , (int) round( temp[1] ) , (int) round( temp[2]) ); 
+	out[0].assign( szTempString ); 
+	out[1] = out[0]; 
+ 
+	// nuclear colors 
+ 
+	// fluid_fraction = pCell->phenotype.volume.nuclear_fluid / (pCell->phenotype.volume.nuclear + 1e-10); // pCell->phenotype.volume.nuclear_fluid_volume / ( pCell->State.nuclear_volume + 1e-10 ); 
+	solid_fraction = pCell->phenotype.volume.nuclear_solid / (pCell->phenotype.volume.nuclear + 1e-10); // pCell->State.nuclear_solid_volume / ( pCell->State.nuclear_volume + 1e-10 ); 
+
+	// hematoxylin staining 
+	temp = transmission( light , hematoxylin_absorb , thickness , solid_fraction );
+	// DAB staining of nucleus (if any) 
+	temp = transmission( temp , DAB_absorb ,thickness, pCell->custom_data["DAB_nucleus"]*solid_fraction );
+
+	sprintf( szTempString , "rgb(%u,%u,%u)", (int) round( temp[0] ) , (int) round( temp[1] ) , (int) round( temp[2]) ); 
+	out[2].assign( szTempString ); 
+	out[3] = out[2]; 
+
+	return out;
+
+}
+
 std::vector<std::string> hematoxylin_and_eosin_cell_coloring( Cell* pCell )
 {
 	static std::vector<std::string> out( 4, "rgb(255,255,255)" );
@@ -306,16 +357,6 @@ std::vector<std::string> hematoxylin_and_eosin_cell_coloring( Cell* pCell )
  
 	static std::vector<double> eosin_absorb = {2.55,33.15,2.55}; // ( 3 , 3.0 ); // (3,33,3)
 	static std::vector<double> hematoxylin_absorb = {45.90,51.00,20.40}; // ( 3, 45.0 ); // (45,51,20)
-/*	
-	static bool setup_done = false; 
-	if( !setup_done )
-	{
-		eosin_absorb[1] = 33.0;
-		hematoxylin_absorb[1] = 51.0; 
-		hematoxylin_absorb[2] = 20.0; 
-		setup_done = true; 
-	}
-*/	
 
 	static std::vector<double> temp( 3, 0.0 );
  
@@ -503,7 +544,13 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
    
 			Colors = cell_coloring_function( pC ); 
 
-			os << "   <g id=\"cell" << pC->ID << "\">" << std::endl; 
+			os << "   <g id=\"cell" << pC->ID << "\" " 
+			<< "type=\"" << pC->type_name << "\" "; // new April 2022  
+			if( pC->phenotype.death.dead == true )
+			{ os << "dead=\"true\" " ; } 
+			else
+			{ os << "dead=\"false\" " ; } 
+			os << ">" << std::endl; 
   
 			// figure out how much of the cell intersects with z = 0 
    
@@ -682,10 +729,6 @@ void create_plot_legend( std::string filename , std::vector<std::string> (*cell_
 	
 	std::ofstream os( filename , std::ios::out );
 	Write_SVG_start( os , total_width ,total_height ); 
-
-	// create a temporary cell 
-	Cell* pCell; 
-	pCell = create_cell(); 
 	
 	double cursor_x = padding + temp_cell_radius; 
 	double cursor_y = padding + temp_cell_radius; 
@@ -693,10 +736,11 @@ void create_plot_legend( std::string filename , std::vector<std::string> (*cell_
 	for( int k=0 ; k < number_of_cell_types ; k++ )
 	{
 		// switch to the cell type 
-		pCell->convert_to_cell_definition( *(cell_definitions_by_index[k]) );
+		Cell C; 
+		C.convert_to_cell_definition( *(cell_definitions_by_index[k]) );
 		
 		// get the colors using the current coloring function 
-		std::vector<std::string> colors = cell_coloring_function(pCell); 
+		std::vector<std::string> colors = cell_coloring_function(&C); 
 		
 		// place a big circle with cytoplasm colors 
 		Write_SVG_circle(os,cursor_x, cursor_y , temp_cell_radius , 1.0 , colors[1] , colors[0] ); 
@@ -716,16 +760,7 @@ void create_plot_legend( std::string filename , std::vector<std::string> (*cell_
 		cursor_y -= 0.3*font_size; 
 		cursor_y += ( 2.0 * padding + 2.0*temp_cell_radius ); 
 		cursor_x = padding + temp_cell_radius;
-		
 	}
-	
-	// get rid of this temp cell at the earliest opportunity. 
-	// make it harmless for now 
-	pCell->assign_position( 0,0,0 ); 
-	pCell->turn_off_reactions(0.0); 
-	pCell->set_total_volume( 0.0 ); 
-	pCell->start_death(0); 
- 	pCell->phenotype.cycle.data.exit_rate(0) = 9e99; 
 	
 	Write_SVG_end( os ); 
 	os.close(); 
