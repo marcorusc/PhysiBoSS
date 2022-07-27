@@ -303,6 +303,8 @@ void MaBoSSIntracellular::initialize_intracellular_from_pugixml(pugi::xml_node& 
 
 	// Mappings
 
+	listOfInputs.clear();
+	listOfOutputs.clear();
 	pugi::xml_node node_mappings = node.child( "mapping" );
 	if( node_mappings )
 	{
