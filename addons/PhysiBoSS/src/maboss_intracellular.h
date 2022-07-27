@@ -27,6 +27,7 @@ class MaBoSSIntracellular : public PhysiCell::Intracellular {
 	double scaling = 1.0;
 	double time_stochasticity = 0.0;
 	bool inherit_state = false;
+	double start_time = 0.0;
 
 	std::map<std::string, double> initial_values;
 	std::map<std::string, double> mutations;
@@ -38,7 +39,7 @@ class MaBoSSIntracellular : public PhysiCell::Intracellular {
 	std::vector<int> indicesOfOutputs;
 	MaBoSSNetwork maboss;
 
-	double next_physiboss_run = 0;
+	double next_physiboss_run = 0.0;
 
 	MaBoSSIntracellular();
 	
@@ -57,6 +58,7 @@ class MaBoSSIntracellular : public PhysiCell::Intracellular {
 	
 	void start() {
 		this->maboss.restart_node_values();
+		this->next_physiboss_run = this->start_time;
 	}
 	
 	void update() {

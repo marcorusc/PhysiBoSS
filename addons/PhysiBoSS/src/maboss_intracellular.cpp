@@ -221,6 +221,12 @@ void MaBoSSIntracellular::initialize_intracellular_from_pugixml(pugi::xml_node& 
 		{
 			inherit_state = PhysiCell::xml_get_my_bool_value( node_inherit_state );
 		}
+
+		pugi::xml_node node_start_time = node_settings.child( "start_time" );
+		if( node_start_time )
+		{
+			start_time = PhysiCell::xml_get_my_double_value( node_start_time );
+		}
 	
 		}
 	
