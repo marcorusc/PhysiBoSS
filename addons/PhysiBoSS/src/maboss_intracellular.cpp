@@ -57,8 +57,9 @@ MaBoSSIntracellular::MaBoSSIntracellular(MaBoSSIntracellular* copy)
 		for (MaBoSSOutput& output: listOfOutputs) {
 			indicesOfOutputs.push_back(PhysiCell::find_behavior_index(output.physicell_name));
 		}
-		//maboss.set_state(copy->maboss.get_maboss_state());
-		//std::cout << get_state();
+
+		if (copy->inherit_state)
+			maboss.set_state(copy->maboss.get_maboss_state());
 	}	
 }
 
@@ -215,6 +216,11 @@ void MaBoSSIntracellular::initialize_intracellular_from_pugixml(pugi::xml_node& 
 			maboss.set_time_stochasticity(time_stochasticity);
 		}
 
+		pugi::xml_node node_inherit_state = node_settings.child( "inherit_state" );
+		if( node_inherit_state )
+		{
+			inherit_state = PhysiCell::xml_get_my_bool_value( node_inherit_state );
+		}
 	
 		}
 	
