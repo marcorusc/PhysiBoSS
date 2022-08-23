@@ -31,6 +31,8 @@ MaBoSSIntracellular::MaBoSSIntracellular(MaBoSSIntracellular* copy)
 	time_tick = copy->time_tick;
 	scaling = copy->scaling;
 	time_stochasticity = copy->time_stochasticity;
+	inherit_state = copy->inherit_state;
+	inherit_nodes = copy->inherit_nodes;
 	initial_values = copy->initial_values;
 	mutations = copy->mutations;
 	parameters = copy->parameters;
@@ -58,8 +60,8 @@ MaBoSSIntracellular::MaBoSSIntracellular(MaBoSSIntracellular* copy)
 			indicesOfOutputs.push_back(PhysiCell::find_behavior_index(output.physicell_name));
 		}
 
-		if (copy->inherit_state)
-			maboss.set_state(copy->maboss.get_maboss_state());
+		// if (copy->inherit_state)
+		// 	maboss.set_state(copy->maboss.get_maboss_state());
 	}	
 }
 
@@ -216,10 +218,26 @@ void MaBoSSIntracellular::initialize_intracellular_from_pugixml(pugi::xml_node& 
 			maboss.set_time_stochasticity(time_stochasticity);
 		}
 
-		pugi::xml_node node_inherit_state = node_settings.child( "inherit_state" );
-		if( node_inherit_state )
+		pugi::xml_node node_inheritance = node_settings.child( "inheritance" );
+		if( node_inheritance )
 		{
-			inherit_state = PhysiCell::xml_get_my_bool_value( node_inherit_state );
+			std::cout << "We have inheritance set ";
+			pugi::xml_attribute global_inheritance = node_inheritance.attribute( "global" ); 
+			inherit_state = global_inheritance.as_bool();
+			if (inherit_state) 
+			std::cout << " to True" << std::endl;
+			else
+			std::cout <<  " to False" << std::endl;
+			pugi::xml_node node_inherit_node = node_inheritance.child( "inherit_node" );
+			while( node_inherit_node )
+			{
+				pugi::xml_attribute node_inherit_intracellular_name = node_inherit_node.attribute( "intracellular_name" ); 
+				bool inherit_value = PhysiCell::xml_get_my_bool_value( node_inherit_node );
+				inherit_nodes[node_inherit_intracellular_name.value()] = inherit_value;
+				
+				node_inherit_node = node_inheritance.next_sibling( "inherit_node" ); 
+			}
+
 		}
 
 		pugi::xml_node node_start_time = node_settings.child( "start_time" );
