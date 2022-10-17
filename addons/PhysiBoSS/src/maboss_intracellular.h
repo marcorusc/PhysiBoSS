@@ -83,6 +83,7 @@ class MaBoSSIntracellular : public PhysiCell::Intracellular {
 			static_cast<MaBoSSIntracellular*>(cell->phenotype.intracellular)->maboss.get_maboss_state(), 
 			inherit_state, inherit_nodes
 		);
+		this->next_physiboss_run = static_cast<MaBoSSIntracellular*>(cell->phenotype.intracellular)->next_physiboss_run; 
 	}
 	void update_inputs(PhysiCell::Cell* cell, PhysiCell::Phenotype& phenotype, double dt);
 	void update_outputs(PhysiCell::Cell * cell, PhysiCell::Phenotype& phenotype, double dt);
