@@ -239,6 +239,29 @@ template_BM:
 	mkdir ./scripts/
 	cp ./sample_projects_intracellular/boolean/template_BM/scripts/* ./scripts/
 
+invasion_model: 	
+	cp ./sample_projects_intracellular/boolean/invasion_model/custom_modules/* ./custom_modules/
+	touch main.cpp && cp main.cpp main-backup.cpp
+	cp ./sample_projects_intracellular/boolean/invasion_model/main-invasion_model.cpp ./main.cpp 
+	cp Makefile Makefile-backup
+	cp ./sample_projects_intracellular/boolean/invasion_model/Makefile .
+	cp ./config/PhysiCell_settings.xml ./config/PhysiCell_settings-backup.xml 
+	cp -r ./sample_projects_intracellular/boolean/invasion_model/config/* ./config/
+	mkdir ./scripts/
+	cp -r ./sample_projects_intracellular/boolean/invasion_model/scripts/* ./scripts/
+
+cell_cycle: 	
+	cp ./sample_projects_intracellular/boolean/cell_cycle/custom_modules/* ./custom_modules/
+	touch main.cpp && cp main.cpp main-backup.cpp
+	cp ./sample_projects_intracellular/boolean/cell_cycle/main.cpp ./main.cpp 
+	cp Makefile Makefile-backup
+	cp ./sample_projects_intracellular/boolean/cell_cycle/Makefile .
+	cp ./config/PhysiCell_settings.xml ./config/PhysiCell_settings-backup.xml 
+	cp -r ./sample_projects_intracellular/boolean/cell_cycle/config/* ./config/
+	mkdir ./scripts/
+	cp -r ./sample_projects_intracellular/boolean/cell_cycle/scripts/* ./scripts/
+
+
 simple-spheroid-tnf: 	
 	cp ./sample_projects_intracellular/boolean/simple_spheroid_tnf/custom_modules/* ./custom_modules/
 	touch main.cpp && cp main.cpp main-backup.cpp
@@ -247,7 +270,7 @@ simple-spheroid-tnf:
 	cp ./sample_projects_intracellular/boolean/simple_spheroid_tnf/Makefile .
 	cp ./config/PhysiCell_settings.xml ./config/PhysiCell_settings-backup.xml 
 	cp -r ./sample_projects_intracellular/boolean/simple_spheroid_tnf/config/* ./config/
-	mkdir ./scripts/
+	mkdir -p ./scripts/
 	cp ./sample_projects_intracellular/boolean/simple_spheroid_tnf/scripts/* ./scripts/
 
 # early examples for convergence testing 
