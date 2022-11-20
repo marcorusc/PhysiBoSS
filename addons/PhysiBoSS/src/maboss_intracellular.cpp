@@ -27,6 +27,7 @@ MaBoSSIntracellular::MaBoSSIntracellular(MaBoSSIntracellular* copy)
 	initial_values = copy->initial_values;
 	mutations = copy->mutations;
 	parameters = copy->parameters;
+	next_physiboss_run = copy->next_physiboss_run;
 	
 	if (copy->maboss.has_init()) {
 		maboss.init_maboss(copy->bnd_filename, copy->cfg_filename);
