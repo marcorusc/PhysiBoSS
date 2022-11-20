@@ -74,10 +74,10 @@
 
 <PhysiCell_settings version="devel-version">
 	<domain>
-		<x_min>-600</x_min>
-		<x_max>600</x_max>
-		<y_min>-600</y_min>
-		<y_max>600</y_max>
+		<x_min>-400</x_min>
+		<x_max>400</x_max>
+		<y_min>-400</y_min>
+		<y_max>400</y_max>
 		<z_min>-400</z_min>
 		<z_max>400</z_max>
 		<dx>10</dx>
@@ -114,7 +114,7 @@
 		</SVG>
 		
 		<legacy_data>
-			<enable>true</enable>
+			<enable>false</enable>
 		</legacy_data>
 	</save>
 	
@@ -240,6 +240,7 @@
 						<initial_value node="GF">1</initial_value>
 					</initial_values>
 					<mutations>
+						<mutation node="SRC">1</mutation>
 					</mutations>
 				</intracellular>
 
@@ -264,8 +265,10 @@
 		<random_seed type="int" units="dimensionless" description="change seed of the simulation">0</random_seed> 
 		<substrate_to_monitor type="string" units="">ecm</substrate_to_monitor> 
 		<!-- src experiment parameters -->
-		<src_activation_time type="double" units="min">12000</src_activation_time> <!--20160 -->
-		<src_stop_time type="double" units="min">28800</src_stop_time>
+		<simulate_SRC type="bool" units="" description="change initial configuration to simulate SRC">false</simulate_SRC>
+		<node_to_mutate type="string" units="" description="change the node to mutate for the experiments">ERK</node_to_mutate>
+		<src_activation_time type="double" units="min">12000000</src_activation_time> <!--20160 -->
+		<src_stop_time type="double" units="min">2880</src_stop_time>
 		<config_radius_light type="double" units="" description="change the initial radius of the light illumination">15</config_radius_light> 
 		<!-- cell-substrates interaction paramaters --> 
 		<ecm_adhesion_min type="double" units="" description="used to set the min adhesion between cells and ECM"> 1 </ecm_adhesion_min>

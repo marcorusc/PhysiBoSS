@@ -70,6 +70,7 @@
 #include <sstream>
 #include "./custom.h"
 #include "../BioFVM/BioFVM.h"  
+#include "../addons/PhysiBoSS/src/maboss_intracellular.h"
 
 using namespace BioFVM;
 using namespace PhysiCell;
@@ -179,9 +180,16 @@ void setup_tissue( void )
 
 	std::vector<std::vector<double>> positions;
 
-	if (default_microenvironment_options.simulate_2D == true){
+	bool simulate_SRC = parameters.bools("simulate_SRC");
+	// New configuration for epithelial monolayer with SRC
+	if(simulate_SRC == true){
+		create_hexagonal_tissue(cell_radius);
+		return;
+	}
+
+	if (default_microenvironment_options.simulate_2D == true && simulate_SRC == false){
 		positions = create_cell_disc_positions(cell_radius,tumor_radius);
-		std::cout << "ENABLED 2D SIMULATION"; 
+		std::cout << "ENABLED 2D CONFIGURATION"; 
 	}
 	else
 		positions = create_cell_sphere_positions(cell_radius,tumor_radius);
@@ -230,7 +238,7 @@ void tumor_cell_phenotype_with_signaling( Cell* pCell, Phenotype& phenotype, dou
 		//  std::cout << "setting input nodes" << "\n";
 		//pCell->phenotype.intracellular->print_current_nodes();
 		set_input_nodes(pCell);
-		
+
 		pCell->phenotype.intracellular->update();
 
 		from_nodes_to_cell(pCell, phenotype, dt);
@@ -871,6 +879,64 @@ void color_node(Cell* pCell){
 	pCell->custom_data["node"] = pCell->phenotype.intracellular->get_boolean_variable_value(node_name);
 }
 
+
+void create_hexagonal_tissue(double cell_radius){
+
+	Cell* pCell;
+	
+	// hexagonal cell packing 
+
+	double spacing = 0.95 * cell_radius * 2.0; 
+	
+	double x_min = microenvironment.mesh.bounding_box[0] + cell_radius; 
+	double x_max = microenvironment.mesh.bounding_box[3] - cell_radius; 
+
+	double y_min = microenvironment.mesh.bounding_box[1] + cell_radius; 
+	double y_max = microenvironment.mesh.bounding_box[4] - cell_radius; 
+	
+	double x = x_min; 
+	double y = y_min; 
+	
+	double center_x = 0.5*( x_min + x_max ); 
+	double center_y = 0.5*( y_min + y_max ); 
+	
+	double triangle_stagger = sqrt(3.0) * spacing * 0.5; 
+	
+	// find the cell nearest to the center 
+	double nearest_distance_squared = 9e99; 
+	Cell* pNearestCell = NULL; 
+	
+	int n = 0; 
+	while( y < y_max )
+	{
+		while( x < x_max )
+		{
+			pCell = create_cell(get_cell_definition("default")); 
+			pCell->assign_position( x,y, 0.0 );
+			
+			double dx = x - center_x;
+			double dy = y - center_y; 
+			
+			double temp = dx*dx + dy*dy; 
+			if( temp < nearest_distance_squared )
+			{
+				nearest_distance_squared = temp;
+				pNearestCell = pCell; 
+			}
+			x += spacing; 
+		}
+		x = x_min; 
+		
+		n++; 
+		y += triangle_stagger; 
+		// in odd rows, shift 
+		if( n % 2 == 1 )
+		{
+			x += 0.5 * spacing; 
+		}
+	}
+}
+
 std::vector<std::vector<double>> create_cell_sphere_positions(double cell_radius, double sphere_radius)
 {
 	std::vector<std::vector<double>> cells;
@@ -980,6 +1046,7 @@ void start_SRC_mutation(bool light_on){
 // Here we design a spherical shell 
  std::vector<double> center(3, 0);
  double light_radius = parameters.doubles("config_radius_light");
+ std::string node_name = parameters.strings("node_to_mutate");
 
  int total_cell_count = all_cells->size(); 
 
@@ -989,18 +1056,21 @@ void start_SRC_mutation(bool light_on){
 
 	 Cell* pC = (*all_cells)[n]; // global_cell_list[i]; 
 
-	 double norm_pos = norm(pC->position);
-	 if(norm_pos < light_radius && light_on){
-		 mutations["SRC"] = double(light_on);
-		 pC->phenotype.intracellular->mutate(mutations);
-		 std::cout << "MUTATIONS ON!!!! " << pC->phenotype.intracellular->get_boolean_variable_value("SRC") << std::endl;
-	 }
-	 else if(norm_pos < light_radius && !light_on) {
-		mutations["SRC"] = double(light_on);
-		pC->phenotype.intracellular->mutate(mutations);
-		std::cout << "MUTATIONS OFF!!!! " << pC->phenotype.intracellular->get_boolean_variable_value("SRC") << std::endl;
-	 }
+	if(pC->position[2] > microenvironment.mesh.bounding_box[2] && pC->position[2] < microenvironment.mesh.bounding_box[5]){
 
+		double norm_pos = sqrt( (pC->position[0] * pC->position[0]) + (pC->position[1] * pC->position[1]));
+
+		if(norm_pos < light_radius && light_on){
+		 mutations[node_name] = double(light_on);
+		 pC->phenotype.intracellular->mutate(mutations);
+		 //std::cout << "MUTATIONS ON!!!! " << pC->phenotype.intracellular->get_boolean_variable_value(node_name) << std::endl;
+	 	}
+	 else if(norm_pos < light_radius && !light_on) {
+		mutations[node_name] = double(light_on);
+		pC->phenotype.intracellular->mutate(mutations);
+		//std::cout << "MUTATIONS OFF!!!! " << pC->phenotype.intracellular->get_boolean_variable_value(node_name) << std::endl;
+	 	}
+	}
  }
 
 //  for (auto voxel : microenvironment.mesh.voxels) {
@@ -1078,8 +1148,8 @@ std::vector<std::string> node_coloring_function( Cell* pCell )
 	//std::cout << pCell->phenotype.intracellular->get_boolean_node_value( parameters.strings("node_to_visualize"));
 	if ( !pCell->phenotype.intracellular->get_boolean_variable_value( parameters.strings("node_to_visualize") ) ) //node off
 	{
-		output[0] = "rgb(0,0,255)"; //blue
-		output[2] = "rgb(0,0,125)";
+		output[0] = "rgb(255,0,0)"; //blue
+		output[2] = "rgb(125,0,0)";
 		
 	}
 	else{
@@ -1256,6 +1326,30 @@ void SVG_plot_ecm( std::string filename , Microenvironment& M, double z_slice , 
 	
 	// color the dark background 
 
+	int sub_index = M.find_density_index(sub);
+
+	// to add for loop to look for mac conc.
+
+	double max_conc = 0.0;
+	//look for the mac conc among all the substrates
+	#pragma omp parallel for
+	for (int n = 0; n < M.number_of_voxels(); n++)
+	{
+		double concentration = M.density_vector(n)[sub_index];
+		if (concentration > max_conc)
+			max_conc = concentration;
+	}
+
+	//double max_conc = default_microenvironment_options.initial_condition_vector[sub_index];
+
+	if(max_conc == 0){
+
+		std::cout << "it is not possible to correctly print the substrate, make sure to indicate the max value of your substrate in 'initial_condition' in the microenv section of your xml" << std::endl;
+
+		max_conc = 1.0;
+
+	};
+
 	for (int n = 0; n < M.number_of_voxels(); n++)
 	{
 		auto current_voxel = M.voxels(n);
@@ -1275,24 +1369,33 @@ void SVG_plot_ecm( std::string filename , Microenvironment& M, double z_slice , 
 			double x_displ = x_center -  dx_stroma/2;
 			double y_displ = (y_center - dy_stroma) +  dy_stroma/2;
 			//std::cout <<  x_displ - X_lower << "  __  " << y_displ - Y_lower << "\n" ;
-			int sub_index = M.find_density_index(sub);
+
+			std::vector< std::string > output( 4 , "black" );
 
 			double concentration = M.density_vector(n)[sub_index];
 
-			std::vector< std::string > output( 4 , "black" );
-			int color = (int) round( concentration * 255.0 );
+			int color = (int) round( (concentration / max_conc) * 255.0 );
 			if(color > 255){
 				color = 255;
 			}
 			char szTempString [128];
+			sprintf( szTempString , "rgb(%u,234,197)", 255 - color);
+			output[0].assign( szTempString );
+
+			// std::vector< std::string > output( 4 , "black" );
+			// int color = (int) round( concentration * 255.0 );
+			// if(color > 255){
+			// 	color = 255;
+			// }
+			//char szTempString [128];
 
 			int green = 255 - color;
 			int blue = 255 - color;
 			int red = 255 - color;
 
 
-			sprintf( szTempString , "rgb(%u, %u, %u)", red, green, blue );
-			output[0].assign( szTempString );
+			//sprintf( szTempString , "rgb(%u, %u, %u)", red, green, blue );
+			//output[0].assign( szTempString );
 
 			Write_SVG_rect( os , x_displ - X_lower , y_displ - Y_lower, dx_stroma, dy_stroma , 0 , "none", output[0] );
 		}
@@ -1390,7 +1493,7 @@ void SVG_plot_ecm( std::string filename , Microenvironment& M, double z_slice , 
 		}
 	}
 
-	std::cout << max_pressure << "  --  " << lowest_pressure;
+	//std::cout << max_pressure << "  --  " << lowest_pressure;
 
 	os << "  </g>" << std::endl; 
 	
