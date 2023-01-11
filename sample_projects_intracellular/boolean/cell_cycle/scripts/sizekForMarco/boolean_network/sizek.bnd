@@ -1,27 +1,3 @@
-Node G0G1_exit {
-
-	logic = (CyclinD1 & !CyclinA) & !(G2M_exit & S_exit) & !S_exit;
-	rate_up = @logic ? $u_G0G1_exit : 0;
-	rate_down = @logic ? 0 : $d_G0G1_exit;
-
-}
-
-Node S_exit {
-
-	logic = ((CyclinE & G0G1_exit) | (CyclinA & G0G1_exit ) | (CyclinE & S_exit) | (CyclinA & S_exit)) & !(G0G1_exit & G2M_exit) & !G2M_exit ;
-	rate_up = @logic ? $u_S_exit : 0;
-	rate_down = @logic ? 0 : $d_S_exit;
-
-}
-
-Node G2M_exit {
-
-	logic = ((CyclinB & S_exit) | (CyclinB & G2M_exit)) & !(G0G1_exit & S_exit) & !G0G1_exit;
-	rate_up = @logic ? $u_G2M_exit : 0;
-	rate_down = @logic ? 0 : $d_G2M_exit;
-
-}
-
 Node GF {
 
 	logic = (!GF & GF_High) | (GF);

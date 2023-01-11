@@ -70,7 +70,6 @@
 
 using namespace BioFVM; 
 using namespace PhysiCell;
-#include "custom_main.h"
 
 // setup functions to help us along 
 
@@ -92,26 +91,8 @@ std::vector<std::vector<double>> create_cell_disc_positions(double cell_radius, 
 void phenotype_function( Cell* pCell, Phenotype& phenotype, double dt );
 void custom_function( Cell* pCell, Phenotype& phenotype , double dt );
 
-/** \brief Get the current value of integrin strength */
-inline double get_integrin_strength( double percent )
-{ return current_value( PhysiCell::parameters.doubles("ecm_adhesion_min"), PhysiCell::parameters.doubles("ecm_adhesion_max"), percent ); };
-
-/** \brief Get the current value of motility coefficient */
-inline double get_motility_amplitude( double percent )
-{ return current_value(PhysiCell::parameters.doubles("motility_amplitude_min"), PhysiCell::parameters.doubles("motility_amplitude_max"), percent ); };
-
 void contact_function( Cell* pMe, Phenotype& phenoMe , Cell* pOther, Phenotype& phenoOther , double dt ); 
 
-void custom_cell_attach(Cell* pCell);
-
-void custom_detach_cells(Cell* pCell);
-
-/** \brief Return amount of contact with ECM */
-inline double contact_ecm(Cell* pCell)
-{ double ecm_contact = pCell->custom_data["ecm_contact"]; return ecm_contact / pCell->phenotype.geometry.radius ; };
-
-void custom_update_cell_velocity( Cell* pCell, Phenotype& phenotype, double dt);
-void add_ecm_interaction( Cell* pCell, int index_ecm, int index_voxel );
 void pre_update_intracellular(Cell* pCell, Phenotype& phenotype, double dt);
 void post_update_intracellular(Cell* pCell, Phenotype& phenotype, double dt);
 

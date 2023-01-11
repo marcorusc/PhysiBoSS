@@ -97,12 +97,12 @@ int main( int argc, char* argv[] )
 	}
 	else
 	{
-		XML_status = load_PhysiCell_config_file( "./config/PhysiCell_settings.xml" );
+		XML_status = load_PhysiCell_config_file("./config/PhysiCell_settings.xml");
 		sprintf( copy_command , "cp ./config/PhysiCell_settings.xml %s" , PhysiCell_settings.folder.c_str() ); 
 	}
 	if( !XML_status )
 	{ exit(-1); }
-	
+
 	// copy config file to output directry 
 	system( copy_command ); 
 	
@@ -145,20 +145,18 @@ int main( int argc, char* argv[] )
 	
 	sprintf( filename , "%s/states_initial.csv", PhysiCell_settings.folder.c_str());
 	MaBoSSIntracellular::save( filename, *PhysiCell::all_cells);
-	std::cout << "  OR  ARE WE HERE???" << std::endl;
 	// save a quick SVG cross section through z = 0, after setting its 
 	// length bar to 200 microns 
-
 	PhysiCell_SVG_options.length_bar = 200; 
 
 	// for simplicity, set a pathology coloring function 
 	
-	std::vector<std::string> (*cell_coloring_function)(Cell*) = my_coloring_function; 
-	std::vector<std::string> (*ECM_coloring_function)(double, double, double) = my_coloring_function_for_stroma; 
+	std::vector<std::string> (*cell_coloring_function)(Cell*) = simple_cell_coloring; 
+	std::vector<std::string> (*stroma_coloring_function)(double, double, double) = my_coloring_function_for_stroma; 
 
 	sprintf( filename , "%s/initial.svg" , PhysiCell_settings.folder.c_str() ); 
-	std::string substrate = PhysiCell::parameters.strings("substrate_to_monitor");
-	SVG_plot( filename , microenvironment, 0.0 , PhysiCell_globals.current_time, cell_coloring_function, ECM_coloring_function);
+	
+	SVG_plot( filename , microenvironment, 0.0 , PhysiCell_globals.current_time, cell_coloring_function, stroma_coloring_function);
 	
 	sprintf( filename , "%s/legend.svg" , PhysiCell_settings.folder.c_str() ); 
 	create_plot_legend( filename , cell_coloring_function ); 
@@ -215,7 +213,7 @@ int main( int argc, char* argv[] )
 				if( PhysiCell_settings.enable_SVG_saves == true )
 				{	
 					sprintf( filename , "%s/snapshot%08u.svg" , PhysiCell_settings.folder.c_str() , PhysiCell_globals.SVG_output_index ); 
-					SVG_plot( filename , microenvironment, 0.0 , PhysiCell_globals.current_time, cell_coloring_function, ECM_coloring_function);
+					SVG_plot( filename , microenvironment, 0.0 , PhysiCell_globals.current_time, cell_coloring_function, stroma_coloring_function);
 					
 					PhysiCell_globals.SVG_output_index++; 
 					PhysiCell_globals.next_SVG_save_time  += PhysiCell_settings.SVG_save_interval;
@@ -255,7 +253,7 @@ int main( int argc, char* argv[] )
 	MaBoSSIntracellular::save( filename, *PhysiCell::all_cells );
 	
 	sprintf( filename , "%s/final.svg" , PhysiCell_settings.folder.c_str() ); 
-	SVG_plot( filename , microenvironment, 0.0 , PhysiCell_globals.current_time, cell_coloring_function, ECM_coloring_function);
+	SVG_plot( filename , microenvironment, 0.0 , PhysiCell_globals.current_time, cell_coloring_function, stroma_coloring_function);
 	
 	// timer 
 	

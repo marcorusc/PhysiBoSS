@@ -261,6 +261,16 @@ cell_cycle:
 	mkdir ./scripts/
 	cp -r ./sample_projects_intracellular/boolean/cell_cycle/scripts/* ./scripts/
 
+differentiation: 	
+	cp ./sample_projects_intracellular/boolean/differentiation/custom_modules/* ./custom_modules/
+	touch main.cpp && cp main.cpp main-backup.cpp
+	cp ./sample_projects_intracellular/boolean/differentiation/main.cpp ./main.cpp 
+	cp Makefile Makefile-backup
+	cp ./sample_projects_intracellular/boolean/differentiation/Makefile .
+	cp ./config/PhysiCell_settings.xml ./config/PhysiCell_settings-backup.xml 
+	cp -r ./sample_projects_intracellular/boolean/differentiation/config/* ./config/
+	mkdir ./scripts/
+	cp -r ./sample_projects_intracellular/boolean/differentiation/scripts/* ./scripts/
 
 simple-spheroid-tnf: 	
 	cp ./sample_projects_intracellular/boolean/simple_spheroid_tnf/custom_modules/* ./custom_modules/

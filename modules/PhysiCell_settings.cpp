@@ -189,8 +189,7 @@ void PhysiCell_Settings::read_from_pugixml( void )
 	
 	node = xml_find_node( node , "SVG" ); 
 	SVG_save_interval = xml_get_double_value( node , "interval" );
-	enable_SVG_saves = xml_get_bool_value( node , "enable" ); 
-	node = node.parent(); 
+	enable_SVG_saves = xml_get_bool_value( node , "enable" );  
 
 	pugi::xml_node node_plot_substrate; 
 	node_plot_substrate = xml_find_node( node , "plot_substrate" );
@@ -201,7 +200,8 @@ void PhysiCell_Settings::read_from_pugixml( void )
 		min_concentration = xml_get_double_value(node_plot_substrate, "min_conc");
 		max_concentration = xml_get_double_value(node_plot_substrate, "max_conc");
 	};
-	
+	node = node.parent();
+
 	node = xml_find_node( node , "intracellular_data" ); 
 	intracellular_save_interval = xml_get_double_value( node , "interval" );
 	enable_intracellular_saves = xml_get_bool_value( node , "enable" ); 

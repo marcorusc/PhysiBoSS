@@ -402,7 +402,7 @@ std::string formatted_minutes_to_DDHHMM( double minutes )
 	return output ;
 }
 
-void SVG_plot( std::string filename , Microenvironment& M, double z_slice , double time, std::vector<std::string> (*cell_coloring_function)(Cell*), std::vector<std::string> (*ECM_coloring_function)(double, double, double))
+void SVG_plot( std::string filename , Microenvironment& M, double z_slice , double time, std::vector<std::string> (*cell_coloring_function)(Cell*), std::vector<std::string> (*ECM_coloring_function)(double, double, double) )
 {
 	double X_lower = M.mesh.bounding_box[0];
 	double X_upper = M.mesh.bounding_box[3];
@@ -429,11 +429,24 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
 		exit(-1); 
 	} 
 	
-	Write_SVG_start( os, plot_width , plot_height + top_margin );
+	if(PhysiCell_settings.enable_substrate_plot == true){
 
-	// draw the background 
-	Write_SVG_rect( os , 0 , 0 , plot_width, plot_height + top_margin , 0.002 * plot_height , "white", "white" );
+		double legend_padding = 200.0; // I have to add a margin on the left to visualize the bar plot and the values
 
+		Write_SVG_start( os, plot_width + legend_padding, plot_height + top_margin );
+
+		// draw the background 
+		Write_SVG_rect( os , 0 , 0 , plot_width + legend_padding, plot_height + top_margin , 0.002 * plot_height , "white", "white" );
+
+	}
+	else{
+
+		Write_SVG_start( os, plot_width , plot_height + top_margin );
+
+		// draw the background 
+		Write_SVG_rect( os , 0 , 0 , plot_width, plot_height + top_margin , 0.002 * plot_height , "white", "white" );
+
+	}
 	// write the simulation time to the top of the plot
  
 	char* szString; 
@@ -474,6 +487,7 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
 	double half_voxel_size = voxel_size / 2.0; 
 	double normalizer = 78.539816339744831 / (voxel_size*voxel_size*voxel_size); 
  
+ // color in the background ECM
 	if(PhysiCell_settings.enable_substrate_plot == true)
 	{
 		double dz_stroma = M.mesh.dz;
@@ -488,12 +502,12 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
 		else
 		{
 			if(PhysiCell_settings.max_concentration != 0 | PhysiCell_settings.min_concentration != 0){
-			max_conc = PhysiCell_settings.max_concentration;
-			min_conc = PhysiCell_settings.min_concentration;
+			 max_conc = PhysiCell_settings.max_concentration;
+			 min_conc = PhysiCell_settings.min_concentration;
 			}
 			else{
-			max_conc = M.density_vector(5)[sub_index];
-			min_conc = M.density_vector(5)[sub_index];	 // so here I am sampling the concentration to set a min and a mx
+			 max_conc = M.density_vector(5)[sub_index];
+			 min_conc = M.density_vector(5)[sub_index];	 // so here I am sampling the concentration to set a min and a mx
 			//look for the max and min concentration among all the substrates
 			for (int n = 0; n < M.number_of_voxels(); n++)
 			{
@@ -511,13 +525,13 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
 				max_conc = 1.0;
 
 			};
-
+		
 			for (int n = 0; n < M.number_of_voxels(); n++)
 			{
 				auto current_voxel = M.voxels(n);
 				int z_center = current_voxel.center[2];
 				double z_displ = z_center -  dz_stroma/2; 
-
+				
 				double z_compare = z_displ;
 
 				if (default_microenvironment_options.simulate_2D == true){
@@ -527,7 +541,7 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
 				if (z_slice == z_compare){			//this is to make sure the substrate is sampled in the voxel visualized (so basically the slice)
 					int x_center = current_voxel.center[0];
 					int y_center = current_voxel.center[1];
-
+					
 					double x_displ = x_center -  dx_stroma/2;
 					double y_displ = (y_center - dy_stroma) +  dy_stroma/2;
 
@@ -540,9 +554,49 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
 
 			}
 
+			// add legend for the substrate
+
+			os << " <g id=\"legend\" " << std::endl 
+	   		   << "    transform=\"translate(0," << plot_height + 25 << ") scale(1,-1)\">" << std::endl;  //for some misterious reasons, the tissue part in the SVG is rotated so I have to re-rotate to draw
+																										  // the legend, otherwise it will be printed upside down
+			int padding = 0;
+
+			double conc_interval = (max_conc - min_conc) / 13; // setting the interval for the values in the legend. I will divide the legend in 13 parts (as in the jupyter notebook)
+
+			for(int i = 0; i <= 12; i++){ //creating 13 rectangoles for the bar, each one with a different shade of color.
+
+				double concentration_sample = min_conc + (conc_interval * i); // the color depends on the concentration, starting from the min concentration to the max (which was sampled before)
+
+				std::vector< std::string > output = ECM_coloring_function(concentration_sample, max_conc, min_conc );
+
+				padding = 25 * i;
+
+				double upper_left_x = plot_width + 25.0;
+				double upper_left_y = ((plot_height - 25) / 13.0) * i; // here I set the position of each rectangole
+
+				Write_SVG_rect(os, upper_left_x, plot_height - upper_left_y - 45, 25.0, ((plot_height - 25.0) / 13.0), 0 , "none", output[0]); //drawing each piece of the barplot
+
+				if(i%2 == 0){ // of course I am not printing each value of the barplot, otherwise is too crowded, so just one each 2
+
+					char* szString; 
+					szString = new char [1024]; 
+
+					sprintf( szString , "- %f", concentration_sample);
+
+					Write_SVG_text( os , szString, upper_left_x + 24, plot_height - upper_left_y + 5.31, font_size + 5, 
+						PhysiCell_SVG_options.font_color.c_str() , PhysiCell_SVG_options.font.c_str() ); // misterious values set with a trial and error approach due to OCD. But now the legend is coherent at pixel level
+
+					delete [] szString;
+
+				}
+
+			}
+
+			Write_SVG_rect(os, 25.0 + plot_width, 25.0, 25.0, plot_height - 25.0, 0.002 * plot_height , "black", "none"); // nice black contour around the legend
+
+			os << "  </g>" << std::endl; // no more rotation, restoring the tissue object in the SVG
 		}
 	}
-// color in the background ECM
 /* 
  if( ECM.TellRows() > 0 )
  {
@@ -553,7 +607,6 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
   Vector position; 
   *position(2) = z_slice; 
   
-
   // 25*pi* 5 microns^2 * length (in source) / voxelsize^3
   
   for( int j=0; j < ratio*ECM.TellCols() ; j++ )
@@ -570,7 +623,6 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
 	double BV = normalizer * evaluate_Matrix3( OxygenSourceHD, X_environment , Y_environment, Z_environment , position );
 	if( isnan( BV ) )
 	{ BV = 0.0; }
-
 	vector<string> Colors;
 	Colors = hematoxylin_and_eosin_stroma_coloring( E , BV );
 	Write_SVG_rect( os , *position(0)-half_voxel_size-X_lower , *position(1)-half_voxel_size+top_margin-Y_lower, 
@@ -587,7 +639,6 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
 
 	/*
 	 std::vector<std::string> VesselColors = hematoxylin_and_eosin_stroma_coloring( 0,1 );
-
 	 os << " <g id=\"BloodVessels\">" << endl; 
 	 extern vector<BloodVesselSegment*> BloodVesselSegments; 
 	 Vector Offset; 
@@ -653,7 +704,6 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
 		 string bm_color ( "rgb(0,0,0)" );
 		 double r = thickness/2.0; 
 		 double z = fabs( *(pBMN->Position)(2) - z_slice) ; 
-
 		 os << " <g id=\"BMN" << pBMN->ID << "\">" << std::endl; 
 		 Write_SVG_circle( os,*(pBMN->Position)(0)-X_lower, *(pBMN->Position)(1)+top_margin-Y_lower, 10*thickness/2.0 , 0.5 , bm_color , bm_color ); 
 		 os << " </g>" << std::endl;

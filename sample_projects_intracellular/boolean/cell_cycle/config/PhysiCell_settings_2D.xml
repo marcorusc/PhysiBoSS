@@ -203,24 +203,18 @@
           </cell_transformations>
 
 			    <intracellular type="maboss">
-            <bnd_filename>config/boolean_network/sizek_phenotypes.bnd</bnd_filename>
-            <cfg_filename>config/boolean_network/sizek_sustained_phenotypes.cfg</cfg_filename>
+            <bnd_filename>config/boolean_network/intracellular_model.bnd</bnd_filename>
+            <cfg_filename>config/boolean_network/intracellular_model.cfg</cfg_filename>
             <settings>
               <intracellular_dt>6.0</intracellular_dt>
               <time_stochasticity>0</time_stochasticity>
               <scaling>30.0</scaling>
-              <inheritance global="False"/>
+              <inheritance global="True"/>
               <initial_conditions>
                 <initial_condition intracellular_name="Trail">0.0</initial_condition>
               </initial_conditions>
             </settings>
             <mapping>
-              <input intracellular_name="Volume" physicell_name="volume">
-                <settings>
-                  <action>activation</action>
-                  <threshold>3000</threshold>
-                </settings>
-              </input>
               <output intracellular_name="G0G1_exit" physicell_name="cycle entry">
                 <settings>
                   <action>activation</action>
