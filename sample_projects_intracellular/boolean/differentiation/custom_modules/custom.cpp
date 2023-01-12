@@ -148,7 +148,9 @@ void setup_tissue( void )
 	// place a cluster of tumor cells at the center 
  	double cell_radius = cell_defaults.phenotype.geometry.radius; 
 	double cell_spacing = 0.95 * 2.0 * cell_radius; 
-	double tumor_radius = parameters.doubles("tumor_radius");
+	double linphonode_radius = parameters.doubles("linphonode_radius");
+	double x_center = parameters.doubles("X_linfonode_center");
+	double y_center = parameters.doubles("Y_linfonode_center");
 	// Parameter<double> temp; 
 	
 	Cell* pCell = NULL; 
@@ -156,23 +158,48 @@ void setup_tissue( void )
 	std::vector<std::vector<double>> positions;	
 
 	if (default_microenvironment_options.simulate_2D == true){
-		positions = create_cell_disc_positions(cell_radius,tumor_radius);
+		positions = create_cell_disc_positions(cell_radius,linphonode_radius, x_center, y_center);
 		std::cout << "ENABLED 2D SIMULATION" << std::endl; 
 	}
 	else
-		positions = create_cell_sphere_positions(cell_radius,tumor_radius);
-	std::cout << "creating " << positions.size() << " closely-packed tumor cells ... " << std::endl;
+		positions = create_cell_sphere_positions(cell_radius,linphonode_radius);
+	std::cout << "creating " << positions.size() << " closely-packed T0 cells ... " << std::endl;
 
 
 	for( int i=0; i < positions.size(); i++ )
 	{
-		pCell = create_cell(get_cell_definition("cancercell")); 
-		
-		pCell->assign_position( positions[i] );
+		std::cout << "first breakpoint";
+		pCell = create_cell(get_cell_definition("T0")); 
+		if( pCell->get_container()->underlying_mesh.is_position_valid(positions[i][0], positions[i][1], positions[i][2]))
+		{
+			pCell->assign_position( positions[i] );
+		}
 	} 
 
-	load_cells_from_pugixml();
-	
+	double dendritic_core_radius = parameters.doubles("dendritic_core_radius");
+	x_center = parameters.doubles("X_dendritic_center");
+	y_center = parameters.doubles("Y_dendritic_center");
+
+
+	pCell = NULL; 
+
+	if (default_microenvironment_options.simulate_2D == true){
+		positions = create_cell_disc_positions(cell_radius,dendritic_core_radius, x_center, y_center); 
+	}
+	else
+		positions = create_cell_sphere_positions(cell_radius,dendritic_core_radius);
+	std::cout << "creating " << positions.size() << " closely-packed dendritic cells ... " << std::endl;
+
+	for( int i=0; i < positions.size(); i++ )
+	{
+		std::cout << "first breakpoint";
+		pCell = create_cell(get_cell_definition("dendritic_cell")); 
+		if( pCell->get_container()->underlying_mesh.is_position_valid(positions[i][0], positions[i][1], positions[i][2]))
+		{
+			pCell->assign_position( positions[i] );
+		}
+	} 
+
 	return; 
 }
 
@@ -208,7 +235,7 @@ std::vector<std::vector<double>> create_cell_sphere_positions(double cell_radius
 
 }
 
-std::vector<std::vector<double>> create_cell_disc_positions(double cell_radius, double disc_radius)
+std::vector<std::vector<double>> create_cell_disc_positions(double cell_radius, double disc_radius, double center_x, double center_y)
 {	 
 	double cell_spacing = 0.95 * 2.0 * cell_radius; 
 	
@@ -229,20 +256,20 @@ std::vector<std::vector<double>> create_cell_disc_positions(double cell_radius, 
 		
 		while( x < x_outer )
 		{
-			tempPoint[0]= x; tempPoint[1]= y;	tempPoint[2]= 0.0;
+			tempPoint[0]= x + center_x; tempPoint[1]= y + center_y;	tempPoint[2]= 0.0;	
 			positions.push_back(tempPoint);			
 			if( fabs( y ) > 0.01 )
 			{
-				tempPoint[0]= x; tempPoint[1]= -y;	tempPoint[2]= 0.0;
+				tempPoint[0]= x + center_x; tempPoint[1]= -y + center_y;	tempPoint[2]= 0.0;
 				positions.push_back(tempPoint);
 			}
 			if( fabs( x ) > 0.01 )
 			{ 
-				tempPoint[0]= -x; tempPoint[1]= y;	tempPoint[2]= 0.0;
+				tempPoint[0]= -x + center_x; tempPoint[1]= y + center_y;	tempPoint[2]= 0.0;
 				positions.push_back(tempPoint);
 				if( fabs( y ) > 0.01 )
 				{
-					tempPoint[0]= -x; tempPoint[1]= -y;	tempPoint[2]= 0.0;
+					tempPoint[0]= -x + center_x; tempPoint[1]= -y + center_y;	tempPoint[2]= 0.0;
 					positions.push_back(tempPoint);
 				}
 			}
@@ -275,59 +302,6 @@ void post_update_intracellular(Cell* pCell, Phenotype& phenotype, double dt){
 
 	// FUNCTIONS TO PLOT CELLS
 
-std::vector<std::string> ECM_coloring_function( Cell* pCell)
-{
-	std::vector< std::string > output( 4 , "black" );
-	std::string parameter = parameters.strings("parameter_to_visualize");;
-	double param = pCell->custom_data[parameter];
-	int color = (int) round( param * 255.0 );
-	if(color > 255){
-		color = 255;
-	}
-	char szTempString [128];
-	sprintf( szTempString , "rgb(%u,0,%u)", color, 255-color );
-	output[0].assign( szTempString );
-	return output;
-
-}
-
-std::vector<std::string> phase_coloring_function( Cell* pCell )
-{
-	std::vector< std::string > output( 4 , "rgb(0,0,0)" );
-
-	if ( pCell->phenotype.cycle.current_phase().code == PhysiCell_constants::Ki67_negative )
-	{
-		output[0] = "rgb(0,255,0)"; //green
-		output[2] = "rgb(0,125,0)";
-		
-	}
-	if ( pCell->phenotype.cycle.current_phase().code == PhysiCell_constants::Ki67_positive_premitotic )
-	{
-		output[0] = "rgb(255,0,0)"; //red
-		output[2] = "rgb(125,0,0)";
-		
-	}
-	if ( pCell->phenotype.cycle.current_phase().code == PhysiCell_constants::Ki67_positive_postmitotic )
-	{
-		output[0] = "rgb(255,255,0)"; //yellow
-		output[2] = "rgb(125,125,0)";
-		
-	}
-	if (pCell->phenotype.cycle.current_phase().code == PhysiCell_constants::necrotic_swelling || 
-		pCell->phenotype.cycle.current_phase().code == PhysiCell_constants::necrotic_lysed || 
-		pCell->phenotype.cycle.current_phase().code == PhysiCell_constants::necrotic )
-	{
-		output[0] = "rgb(165,42,42)"; //brown
-		output[2] = "rgb(165,42,42)";
-	}
-	if (pCell->phenotype.cycle.current_phase().code == PhysiCell_constants::apoptotic )  
-	{
-		output[0] = "rgb(0,0,0)";
-		output[2] = "rgb(0,0,0)";
-	}
-	return output;
-}
-
 std::vector<std::string> node_coloring_function( Cell* pCell )
 {
 	std::vector< std::string > output( 4 , "rgb(0,0,0)" );
@@ -346,16 +320,43 @@ std::vector<std::string> node_coloring_function( Cell* pCell )
 	return output;
 }
 
+std::vector<std::string> cell_type_coloring_function( Cell* pCell )
+{
+	std::vector< std::string > output( 4 , "rgb(0,0,0)" );
+	//std::cout << pCell->phenotype.intracellular->get_boolean_node_value( parameters.strings("node_to_visualize"));
+	if ( pCell->type_name == "T0" ) //node off
+	{
+		output[0] = "rgb(0,0,255)"; //blue
+		output[2] = "rgb(0,0,125)";
+		
+	}
+	else if(pCell->type_name == "Th1"){
+		output[0] = "rgb(0,255,0)"; //green
+		output[2] = "rgb(0,125,0)";
+	}
+	else if(pCell->type_name == "Th17"){
+		output[0] = "rgb(255,255,0)"; //yellow
+		output[2] = "rgb(125,125,0)";
+	}
+	else if(pCell->type_name == "Treg"){
+		output[0] = "rgb(95,158,160)"; //cadetblue
+		output[2] = "rgb(47,79,80)";
+	}
+	else if(pCell->type_name == "dendritic_cell"){
+		output[0] = "rgb(138,43,226)"; //purple
+		output[2] = "rgb(69,21,113)";
+	}
+	
+	return output;
+}
 
 std::vector<std::string> my_coloring_function( Cell* pCell )
 {
 	
 	 int color_number = parameters.ints("color_function");
 
-	 if (color_number == 0)
-	 	return ECM_coloring_function(pCell);
 	 if (color_number == 1)
-	 	return phase_coloring_function(pCell);
+	 	return cell_type_coloring_function(pCell);
 	 else 
 	 	return node_coloring_function( pCell );
 }

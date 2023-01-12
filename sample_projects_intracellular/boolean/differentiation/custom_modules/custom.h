@@ -86,7 +86,7 @@ std::vector<std::string> my_coloring_function( Cell* );
 // custom functions can go here 
 
 std::vector<std::vector<double>> create_cell_sphere_positions(double cell_radius, double sphere_radius);
-std::vector<std::vector<double>> create_cell_disc_positions(double cell_radius, double disc_radius);
+std::vector<std::vector<double>> create_cell_disc_positions(double cell_radius, double disc_radius, double center_x, double center_y);
 
 void phenotype_function( Cell* pCell, Phenotype& phenotype, double dt );
 void custom_function( Cell* pCell, Phenotype& phenotype , double dt );
@@ -97,8 +97,7 @@ void pre_update_intracellular(Cell* pCell, Phenotype& phenotype, double dt);
 void post_update_intracellular(Cell* pCell, Phenotype& phenotype, double dt);
 
 std::vector<std::string> my_coloring_function( Cell* );
-std::vector<std::string> ECM_coloring_function( Cell*);
-std::vector<std::string> phase_coloring_function( Cell* );
 std::vector<std::string> node_coloring_function( Cell* );
+std::vector<std::string> cell_type_coloring_function( Cell* pCell );
 std::vector<std::string> my_coloring_function_for_stroma( double concentration, double max_conc, double min_conc );
 void color_node(Cell* pCell);
