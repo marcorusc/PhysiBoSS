@@ -1,27 +1,27 @@
 Node T0 {
 
-	logic =  !(Th1 | Treg | Th17) & CD4;
+	logic =  (!(Th1 | Treg | Th17) & CD4) & T0;
 	rate_up = @logic ? 1.0 : 0.0;
 	rate_down = @logic ? 0.0 : 1.0;
 }
 
 Node Treg {
 
-	logic = (T0 & ((FOXP3 | FOXP3_2) & !(Th1 | Th17))) | Treg;
+	logic = (T0 & ((FOXP3 | FOXP3_2) & !(Th1 | Th17))) | (Treg & !(Th1 | Th17));
 	rate_up = @logic ? 1.0 : 0.0;
 	rate_down = @logic ? 0.0 : 1.0;
 }
 
 Node Th17 {
 
-	logic = (T0 & (RORGt & !(Th1 | Treg))) | Th17;
+	logic = (T0 & (RORGt & !(Th1 | Treg))) | (Th17 & !(Th1 | Treg));
 	rate_up = @logic ? 1.0 : 0.0;
 	rate_down = @logic ? 0.0 : 1.0;
 }
 
 Node Th1 {
 
-	logic = (T0 & (Tbet & !(Th17 | Treg))) | Th1;
+	logic = (T0 & (Tbet & !(Th17 | Treg))) | (Th1 & !(Th17 | Treg));
 	rate_up = @logic ? 1.0 : 0.0;
 	rate_down = @logic ? 0.0 : 1.0;
 }

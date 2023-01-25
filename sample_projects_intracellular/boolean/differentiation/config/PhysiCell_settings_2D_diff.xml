@@ -49,7 +49,7 @@
 	
 	<options>
 		<legacy_random_points_on_sphere_in_divide>false</legacy_random_points_on_sphere_in_divide>
-        <virtual_wall_at_domain_edge>false</virtual_wall_at_domain_edge>
+    <virtual_wall_at_domain_edge>true</virtual_wall_at_domain_edge>
 	</options>	
 
 	<microenvironment_setup>
@@ -65,7 +65,7 @@
     <variable ID="1" name="CCL19" units="dimensionless">
         <physical_parameter_set>
           <diffusion_coefficient units="micron^2/min">1000.0</diffusion_coefficient>
-          <decay_rate units="1/min">0.1</decay_rate>
+          <decay_rate units="1/min">0.001</decay_rate>
         </physical_parameter_set>
         <initial_condition units="mmHg">0.0</initial_condition>
         <Dirichlet_boundary_condition enabled="False" units="mmHg">0.0</Dirichlet_boundary_condition>
@@ -213,7 +213,14 @@
                   <smoothing>0</smoothing>
                 </settings>
             </input>
-            <input intracellular_name="IL1_In" physicell_name="contact with dendritic_cell">
+            <input intracellular_name="IL12_In" physicell_name="contact with dendritic_cell">
+                <settings>
+                  <action>activation</action>
+                  <threshold>1.0</threshold>
+                  <smoothing>0</smoothing>
+                </settings>
+            </input>
+            <input intracellular_name="IL6_In" physicell_name="contact with dendritic_cell">
                 <settings>
                   <action>activation</action>
                   <threshold>1.0</threshold>
@@ -611,10 +618,15 @@
           <motility>
             <speed units="micron/min">0.0</speed>
             <persistence_time units="min">1</persistence_time>
-            <migration_bias units="dimensionless">0.8</migration_bias>
+            <migration_bias units="dimensionless">0.0</migration_bias>
             <options>
-              <enabled>false</enabled>
+              <enabled>true</enabled>
               <use_2D>true</use_2D>
+              <chemotaxis>
+                <enabled>true</enabled>
+                <substrate>CCL19</substrate>
+                <direction>1</direction>
+              </chemotaxis>
             </options>
           </motility>
 
@@ -636,6 +648,7 @@
               <scaling>30.0</scaling>
               <inheritance global="False"/>
               <initial_conditions>
+                <initial_condition intracellular_name="T0">1</initial_condition>
               </initial_conditions>
             </settings>
             <mapping>
@@ -646,13 +659,27 @@
                   <smoothing>0</smoothing>
                 </settings>
               </input>
+              <input intracellular_name="Contact_2" physicell_name="contact with T0">
+                <settings>
+                  <action>activation</action>
+                  <threshold>0.8</threshold>
+                  <smoothing>0</smoothing>
+                </settings>
+            </input>
               <output intracellular_name="Migration_2" physicell_name="chemotactic response to CCL19">
                 <settings>
                   <action>activation</action>
-                  <value>1000000</value>
+                  <value>1</value>
                   <base_value>0</base_value>
                 </settings>
-              </ouput>
+              </output>
+              <output intracellular_name="Migration_2" physicell_name="migration bias">
+                <settings>
+                  <action>activation</action>
+                  <value>1</value>
+                  <base_value>0</base_value>
+                </settings>
+              </output>
               <output intracellular_name="Migration_2" physicell_name="migration speed">
                 <settings>
                   <action>activation</action>
@@ -679,10 +706,10 @@
 	
 	<user_parameters>
     <random_seed description="" type="int" units="dimensionless">0</random_seed>
-    <linphonode_radius description="" type="double" units="micron">30.0</linphonode_radius>
+    <linphonode_radius description="" type="double" units="micron">50.0</linphonode_radius>
     <X_linfonode_center description="" type="double" units="micron">-250.0</X_linfonode_center>
     <Y_linfonode_center description="" type="double" units="micron">250.0</Y_linfonode_center>
-    <dendritic_core_radius description="" type="double" units="micron">30.0</dendritic_core_radius>
+    <dendritic_core_radius description="" type="double" units="micron">20.0</dendritic_core_radius>
     <X_dendritic_center description="" type="double" units="micron">250.0</X_dendritic_center>
     <Y_dendritic_center description="" type="double" units="micron">-250.0</Y_dendritic_center>
     <!-- substrates parameters -->
