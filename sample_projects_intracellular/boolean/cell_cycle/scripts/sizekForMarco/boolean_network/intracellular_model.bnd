@@ -1,24 +1,24 @@
-Node G0G1_entry {
+Node G0G1_exit {
 
-	logic = (CyclinD1 & !CyclinA) & !(G2M_entry & S_entry) & !S_entry;
-	rate_up = @logic ? $u_G0G1_entry : 0;
-	rate_down = @logic ? 0 : $d_G0G1_entry;
-
-}
-
-Node S_entry {
-
-	logic = ((CyclinE & G0G1_entry) | (CyclinA & G0G1_entry ) | (CyclinE & S_entry) | (CyclinA & S_entry)) & !(G0G1_entry & G2M_entry) & !G2M_entry ;
-	rate_up = @logic ? $u_S_entry : 0;
-	rate_down = @logic ? 0 : $d_S_entry;
+	logic = (CyclinD1 & !CyclinA) & !(G2M_exit & S_exit);
+	rate_up = @logic ? $u_G0G1_exit : 0;
+	rate_down = @logic ? 0 : $d_G0G1_exit;
 
 }
 
-Node G2M_entry {
+Node S_exit {
 
-	logic = ((CyclinB & S_entry) | (CyclinB & G2M_entry)) & !(G0G1_entry & S_entry) & !G0G1_entry;
-	rate_up = @logic ? $u_G2M_entry : 0;
-	rate_down = @logic ? 0 : $d_G2M_entry;
+	logic = ((CyclinD1 & CyclinA) | (CyclinA & S_exit & !CyclinB)) & !(G0G1_exit & G2M_exit) ;
+	rate_up = @logic ? $u_S_exit : 0;
+	rate_down = @logic ? 0 : $d_S_exit;
+
+}
+
+Node G2M_exit {
+
+	logic = (CyclinB & S_exit) & !(G0G1_exit & S_exit);
+	rate_up = @logic ? $u_G2M_exit : 0;
+	rate_down = @logic ? 0 : $d_G2M_exit;
 
 }
 

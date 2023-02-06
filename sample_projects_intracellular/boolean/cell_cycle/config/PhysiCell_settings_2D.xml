@@ -31,7 +31,7 @@
 
 		<full_data>
 			<interval units="min">6</interval>
-			<enable>true</enable>
+			<enable>false</enable>
 		</full_data>
 		
 		<SVG>
@@ -211,25 +211,27 @@
               <scaling>30.0</scaling>
               <inheritance global="True"/>
               <initial_conditions>
-                <initial_condition intracellular_name="Trail">0.0</initial_condition>
+                <initial_condition intracellular_name="Trail">1.0</initial_condition>
               </initial_conditions>
+              <mutations>
+              </mutations>
             </settings>
             <mapping>
-              <output intracellular_name="G0G1_exit" physicell_name="cycle entry">
+              <output intracellular_name="S_entry" physicell_name="exit from cycle phase 0">
                 <settings>
                   <action>activation</action>
                   <value>1000000</value>
                   <base_value>0</base_value>
                 </settings>
               </output>
-              <output intracellular_name="S_exit" physicell_name="exit from cycle phase 1">
+              <output intracellular_name="G2M_entry" physicell_name="exit from cycle phase 1">
                 <settings>
                   <action>activation</action>
                   <value>1000000</value>
                   <base_value>0</base_value>
                 </settings>
               </output>
-              <output intracellular_name="G2M_exit" physicell_name="exit from cycle phase 2">
+              <output intracellular_name="G0G1_entry" physicell_name="exit from cycle phase 2">
                 <settings>
                   <action>activation</action>
                   <value>1000000</value>
