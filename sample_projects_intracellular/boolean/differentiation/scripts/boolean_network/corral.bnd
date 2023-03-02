@@ -1,3 +1,31 @@
+Node T0 {
+
+	logic =  ((!(Th1 | Treg | Th17) & CD4) & T0) | T0;
+	rate_up = @logic ? 1.0 : 0.0;
+	rate_down = @logic ? 0.0 : 1.0;
+}
+
+Node Treg {
+
+	logic = (T0 & ((FOXP3 | FOXP3_2) & !(Th1 | Th17))) | (Treg & !(Th1 | Th17));
+	rate_up = @logic ? 1.0 : 0.0;
+	rate_down = @logic ? 0.0 : 1.0;
+}
+
+Node Th17 {
+
+	logic = (T0 & (RORGt & !(Th1 | Treg))) | (Th17 & !(Th1 | Treg));
+	rate_up = @logic ? 1.0 : 0.0;
+	rate_down = @logic ? 0.0 : 1.0;
+}
+
+Node Th1 {
+
+	logic = (T0 & (Tbet & !(Th17 | Treg))) | (Th1 & !(Th17 | Treg));
+	rate_up = @logic ? 1.0 : 0.0;
+	rate_down = @logic ? 0.0 : 1.0;
+}
+
 Node PI3K_b1 {
 
 	logic = (((((((TCR_b1 AND NOT TCR_b2) AND IL1R) AND CD28) AND RAS) OR ((((TCR_b1 AND TCR_b2) AND IL1R) AND CD28) AND RAS)) AND (NOT PI3K_b1 OR (PI3K_b1 AND NOT PI3K_b2))) OR (PI3K_b1 AND PI3K_b2));

@@ -189,6 +189,7 @@
               <scaling>30.0</scaling>
               <inheritance global="False"/>
               <initial_conditions>
+                <initial_condition intracellular_name="T0">1</initial_condition>
               </initial_conditions>
             </settings>
             <mapping>

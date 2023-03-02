@@ -4,16 +4,16 @@
 		<x_max>600</x_max>
 		<y_min>-600</y_min>
 		<y_max>600</y_max>
-		<z_min>-600</z_min>
-		<z_max>600</z_max>
+		<z_min>-10</z_min>
+		<z_max>10</z_max>
 		<dx>20</dx>
 		<dy>20</dy>
 		<dz>20</dz>
-		<use_2D>false</use_2D>
+		<use_2D>true</use_2D>
 	</domain>
 	
 	<overall>
-		<max_time units="min">22600</max_time> 
+		<max_time units="min">2880</max_time> 
 		<time_units>min</time_units>
 		<space_units>micron</space_units>
 	
@@ -23,15 +23,15 @@
 	</overall>
 	
 	<parallel>
-		<omp_num_threads>6</omp_num_threads>
+		<omp_num_threads>10</omp_num_threads>
 	</parallel> 
 	
 	<save>
-		<folder>output</folder>  
+		<folder>output_foxo3_knockout</folder>  
 
 		<full_data>
-			<interval units="min">60</interval>
-			<enable>true</enable>
+			<interval units="min">6</interval>
+			<enable>false</enable>
 		</full_data>
 		
 		<SVG>
@@ -50,22 +50,22 @@
 	</options>	
 
 	<microenvironment_setup>
-		<variable ID="0" name="TNF" units="dimensionless">
+		<variable ID="0" name="oxygen" units="mmHg">
         <physical_parameter_set>
-          <diffusion_coefficient units="micron^2/min">1200.0</diffusion_coefficient>
-          <decay_rate units="1/min">0.0275</decay_rate>
+          <diffusion_coefficient units="micron^2/min">6000.0</diffusion_coefficient>
+          <decay_rate units="1/min">.1</decay_rate>
         </physical_parameter_set>
-        <initial_condition units="mmHg">0.0</initial_condition>
-        <Dirichlet_boundary_condition enabled="True" units="mmHg">10.0</Dirichlet_boundary_condition>
+        <initial_condition units="mmHg">38.0</initial_condition>
+        <Dirichlet_boundary_condition enabled="False" units="mmHg">38.0</Dirichlet_boundary_condition>
         <Dirichlet_options>
-          <boundary_value ID="xmin" enabled="True">10.0</boundary_value>
-          <boundary_value ID="xmax" enabled="True">10.0</boundary_value>
-          <boundary_value ID="ymin" enabled="True">10.0</boundary_value>
-          <boundary_value ID="ymax" enabled="True">10.0</boundary_value>
-          <boundary_value ID="zmin" enabled="True">10.0</boundary_value>
-          <boundary_value ID="zmax" enabled="True">10.0</boundary_value>
+          <boundary_value ID="xmin" enabled="False">0.0</boundary_value>
+          <boundary_value ID="xmax" enabled="False">0.0</boundary_value>
+          <boundary_value ID="ymin" enabled="False">0.0</boundary_value>
+          <boundary_value ID="ymax" enabled="False">0.0</boundary_value>
+          <boundary_value ID="zmin" enabled="False">0.0</boundary_value>
+          <boundary_value ID="zmax" enabled="False">0.0</boundary_value>
         </Dirichlet_options>
-        </variable>
+      </variable>
 
       <options>
 			<calculate_gradients>true</calculate_gradients>
@@ -84,15 +84,17 @@
 	<cell_definitions>
 		<cell_definition ID="0" name="default">
         <phenotype>
-          <cycle code="5" name="live">
+          <cycle code="2" name="flow_cytometry_cycle_model">
             <phase_transition_rates units="1/min">
-              <rate end_index="0" fixed_duration="false" start_index="0">0.00072</rate>
+              <rate start_index="0" end_index="1" fixed_duration="true">0</rate>
+						  <rate start_index="1" end_index="2" fixed_duration="true">0</rate>
+						  <rate start_index="2" end_index="0" fixed_duration="true">0</rate>
             </phase_transition_rates>
-            </cycle>
+          </cycle>
 
           <death>
             <model code="100" name="apoptosis">
-              <death_rate units="1/min">5.31667e-05</death_rate>
+              <death_rate units="1/min">0</death_rate>
               <phase_durations units="min">
                 <duration fixed_duration="true" index="0">516</duration>
               </phase_durations>
@@ -153,7 +155,7 @@
           </mechanics>
 
           <motility>
-            <speed units="micron/min">1</speed>
+            <speed units="micron/min">0</speed>
             <persistence_time units="min">1</persistence_time>
             <migration_bias units="dimensionless">.5</migration_bias>
             <options>
@@ -161,27 +163,21 @@
               <use_2D>true</use_2D>
               <chemotaxis>
                 <enabled>false</enabled>
-                <substrate>TNF</substrate>
+                <substrate>oxygen</substrate>
                 <direction>-1</direction>
               </chemotaxis>
               <advanced_chemotaxis>
                 <enabled>false</enabled>
                 <normalize_each_gradient>false</normalize_each_gradient>
                 <chemotactic_sensitivities>
-                  <chemotactic_sensitivity substrate="TNF">0.0</chemotactic_sensitivity>
+                  <chemotactic_sensitivity substrate="oxygen">0.0</chemotactic_sensitivity>
                   </chemotactic_sensitivities>
                 </advanced_chemotaxis>
             </options>
           </motility>
 
           <secretion>
-            <substrate name="TNF">
-              <secretion_rate units="1/min">0</secretion_rate>
-              <secretion_target units="substrate density">38</secretion_target>
-              <uptake_rate units="1/min">10</uptake_rate>
-              <net_export_rate units="total substrate/min">0</net_export_rate>
-            </substrate>
-            </secretion>
+          </secretion>
 
           <cell_interactions>
             <dead_phagocytosis_rate units="1/min">0.0</dead_phagocytosis_rate>
@@ -204,50 +200,66 @@
             <transformation_rates>
                 <transformation_rate name="default" units="1/min">0.0</transformation_rate>
                 </transformation_rates>
-            </cell_transformations>
+          </cell_transformations>
 
-          <intracellular type="maboss">
-            <bnd_filename>config/boolean_network/CellFateModel.bnd</bnd_filename>
-            <cfg_filename>config/boolean_network/CellFateModel.cfg</cfg_filename>
+			    <intracellular type="maboss">
+            <bnd_filename>config/boolean_network/intracellular_model.bnd</bnd_filename>
+            <cfg_filename>config/boolean_network/intracellular_model.cfg</cfg_filename>
             <settings>
-              <intracellular_dt>1440.0</intracellular_dt>
-              <time_stochasticity>0.2</time_stochasticity>
-              <scaling>60.0</scaling>
+              <intracellular_dt>6.0</intracellular_dt>
+              <time_stochasticity>0</time_stochasticity>
+              <scaling>30.0</scaling>
+              <inheritance global="True"/>
+              <initial_conditions>
+                <initial_condition intracellular_name="Trail">1.0</initial_condition>
+              </initial_conditions>
+              <mutations>output_foxo3_knockout
+                <mutation intracellular_name="FoxO3">0.0</mutation>
+              </mutations>
+              <mutations>
+              </mutations>
             </settings>
             <mapping>
-              <input intracellular_name="TNF" physicell_name="TNF">
-                <settings>
-                  <action>activation</action>
-                  <threshold>0.01</threshold>
-                  <smoothing>0</smoothing>
-                </settings>
-              </input>
-              <output intracellular_name="Apoptosis" physicell_name="apoptosis">
+              <output intracellular_name="S_entry" physicell_name="exit from cycle phase 0">
                 <settings>
                   <action>activation</action>
                   <value>1000000</value>
                   <base_value>0</base_value>
-                  <smoothing>0</smoothing>
                 </settings>
               </output>
-              <output intracellular_name="NonACD" physicell_name="necrosis">
+              <output intracellular_name="G2M_entry" physicell_name="exit from cycle phase 1">
                 <settings>
                   <action>activation</action>
                   <value>1000000</value>
                   <base_value>0</base_value>
-                  <smoothing>0</smoothing>
+                </settings>
+              </output>
+              <output intracellular_name="G0G1_entry" physicell_name="exit from cycle phase 2">
+                <settings>
+                  <action>activation</action>
+                  <value>1000000</value>
+                  <base_value>0</base_value>
+                </settings>
+              </output>
+              <output intracellular_name="Casp3" physicell_name="apoptosis">
+                <settings>
+                  <action>activation</action>
+                  <value>1000000</value>
+                  <base_value>0</base_value>
                 </settings>
               </output>
             </mapping>
           </intracellular>
 
-          </phenotype>
+        </phenotype>
+
         <custom_data>
           <somedata conserved="false" description="" units="dimensionless">1.0</somedata>
         </custom_data>
-      </cell_definition>
 
-      </cell_definitions>
+    </cell_definition>
+
+  </cell_definitions>
 	
 	<initial_conditions>
 		<cell_positions enabled="false" type="csv">
@@ -257,12 +269,9 @@
 	</initial_conditions>	
 	
 	<user_parameters>
-		<random_seed description="" type="int" units="dimensionless">0</random_seed>
-    <tumor_radius description="" type="double" units="micron">100.0</tumor_radius>
-    <tnf_treatment description="" type="bool" units="dimensionless">True</tnf_treatment>
-    <pulse_tnf description="" type="bool" units="dimensionless">False</pulse_tnf>
+    <random_seed description="" type="int" units="dimensionless">0</random_seed>
+    <tumor_radius description="" type="double" units="micron">30.0</tumor_radius>
     <percentage_mutants description="" type="double" units="dimensionless">0</percentage_mutants>
-
-    </user_parameters>
+  </user_parameters>
 	
 </PhysiCell_settings>

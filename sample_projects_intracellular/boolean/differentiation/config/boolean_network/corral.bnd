@@ -1,6 +1,6 @@
 Node T0 {
 
-	logic =  (!(Th1 | Treg | Th17) & CD4) & T0;
+	logic =  ((!(Th1 | Treg | Th17) & CD4) & T0) | T0;
 	rate_up = @logic ? 1.0 : 0.0;
 	rate_down = @logic ? 0.0 : 1.0;
 }
